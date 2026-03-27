@@ -2,3 +2,11 @@ fastapi
 uvicorn
 google-generativeai
 python-dotenv
+langchain
+langchain-community
+langchain-google-genai
+chromadb
+pypdf
+tiktoken
+pydantic
+websockets

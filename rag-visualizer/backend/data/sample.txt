@@ -1,7 +1,0 @@
-PROJECT NOETIC - MISSION BRIEF
-Noetic is an advanced Chain-of-Thought visualization platform.
-It uses React Flow for graph rendering and FastAPI for real-time streaming.
-The platform founder is a visionary full-stack engineer.
-The latest secret feature is "Zero-API" mode, allowing 100% offline reasoning using Ollama and HuggingFace.
-Noetic handles 60fps animations for starry backgrounds and smooth transitions.
-The core tech stack includes Python, Go, and Next.js.
