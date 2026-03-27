@@ -1,17 +1,24 @@
-import urllib.request
+"""
+Test utility for the Noetic Chat API.
+"""
 import json
 import urllib.error
+import urllib.request
 
-url = 'http://127.0.0.1:8001/api/chat'
-data = json.dumps({'prompt': 'test'})
-req = urllib.request.Request(url, data=data.encode('utf-8'), headers={'Content-Type': 'application/json'})
+API_URL = 'http://127.0.0.1:8001/api/chat'
+REQUEST_DATA = json.dumps({'prompt': 'test'})
+REQUEST = urllib.request.Request(
+    API_URL, 
+    data=REQUEST_DATA.encode('utf-8'), 
+    headers={'Content-Type': 'application/json'}
+)
 
 try:
-    response = urllib.request.urlopen(req)
-    print("STATUS:", response.status)
-    print("BODY:", response.read().decode())
-except urllib.error.HTTPError as e:
-    print("HTTP ERROR:", e.code)
-    print("ERROR BODY:", e.read().decode())
-except Exception as e:
-    print("Exception:", e)
+    with urllib.request.urlopen(REQUEST) as response:
+        print("STATUS:", response.status)
+        print("BODY:", response.read().decode())
+except urllib.error.HTTPError as http_error:
+    print("HTTP ERROR:", http_error.code)
+    print("ERROR BODY:", http_error.read().decode())
+except Exception as generic_error:
+    print("Exception:", generic_error)
