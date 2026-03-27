@@ -16,7 +16,7 @@ async def handle_rag_websocket(websocket: WebSocket):
     # Establish root ID for this session
     root_id = str(uuid.uuid4())
     handler = CoTAsyncHandler(websocket, parent_id=root_id)
-    agent_executor = create_gemini_agent(handler)
+    agent_executor = create_gemini_agent()
 
     try:
         while True:
@@ -49,8 +49,11 @@ async def handle_rag_websocket(websocket: WebSocket):
     except WebSocketDisconnect:
         print("🔌 RAG Client disconnected.")
     except Exception as websocket_error:
+        # pylint: disable=broad-except
         print(f"❌ RAG WebSocket Error: {websocket_error}")
         try:
             await websocket.send_json({"error": str(websocket_error)})
         except Exception:
+            # Reached when client disconnected before error could be sent.
+            # pylint: disable=broad-except
             pass
