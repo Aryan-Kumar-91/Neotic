@@ -37,7 +37,8 @@ export async function sendPromptToAgent(
     }
   }
 
-  const response = await fetch('/api/chat', {
+  const apiBase = process.env.NEXT_PUBLIC_API_URL || "";
+  const response = await fetch(`${apiBase}/api/chat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ prompt: input, files }),
