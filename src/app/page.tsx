@@ -8,7 +8,7 @@ import {
   Send, Mic, Image as ImageIcon, Menu, History as HistoryIcon,
   Search, FolderPlus, Folder, Plus, MessageSquare, 
   Sun, Moon, Bot, Loader2, Trash2, LogOut, Settings,
-  RotateCcw, Info, SlidersHorizontal, Square
+  RotateCcw, Info, SlidersHorizontal, Square, Users
 } from "lucide-react";
 import ReasoningChain from "../components/ReasoningChain";
 import StarBackground from "../components/StarBackground";
@@ -287,10 +287,12 @@ export default function GeminiClone() {
     const newMessages = [...messages, { role: "user", content: text }];
     setMessages(newMessages);
     setInput("");
+    const currentAttachments = [...attachments];
+    setAttachments([]);
     setIsGenerating(true);
        // [CORE REASONING] Proxying request to the Python pipeline via isolated api client.
     try {
-      const data = await sendPromptToAgent(text, controller);
+      const data = await sendPromptToAgent(text, controller, currentAttachments.length > 0 ? currentAttachments : undefined);
       
       const responseMessage: Message = { 
         role: "assistant", 
@@ -331,7 +333,7 @@ export default function GeminiClone() {
       setIsGenerating(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [messages, isGenerating, saveChatEnabled, currentChatId]);
+  }, [messages, isGenerating, saveChatEnabled, currentChatId, attachments]);
 
   const loadChat = (chat: ChatSession) => {
     if (currentChatId === chat.id || isGenerating) return;
@@ -808,6 +810,48 @@ export default function GeminiClone() {
             {/* Avatar + logout */}
             {userEmail ? (
               <div className="flex items-center gap-1">
+                <div className="relative">
+                  <button
+                    onClick={() => {
+                      const el = document.getElementById('collab-dropdown');
+                      if (el) el.classList.toggle('hidden');
+                    }}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium transition-colors border ${theme.borderMain} ${theme.textSecondary} ${theme.hoverBg}`}
+                    title="Collaborate with others"
+                  >
+                    <Users className="w-3.5 h-3.5" />
+                    Collab
+                  </button>
+                  <div id="collab-dropdown" className={`hidden absolute right-0 top-full mt-2 w-56 rounded-xl border ${theme.borderMain} ${theme.bgModule} shadow-xl z-50 p-2 animate-in fade-in slide-in-from-top-2 duration-200`}>
+                    <button
+                      onClick={() => {
+                        const id = Math.random().toString(36).substring(2, 10);
+                        router.push(`/collab/${id}`);
+                      }}
+                      className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-[13px] font-medium ${theme.textSecondary} ${theme.hoverBg} transition-colors`}
+                    >
+                      <Plus className="w-4 h-4" />
+                      New Room
+                    </button>
+                    <div className={`border-t ${theme.borderMain} my-1.5 mx-1`} />
+                    <p className={`text-[10px] uppercase tracking-wider font-semibold ${theme.textMuted} px-3 mb-1.5`}>Join existing</p>
+                    <form onSubmit={(e) => {
+                      e.preventDefault();
+                      const input = (e.currentTarget.elements.namedItem('roomId') as HTMLInputElement)?.value.trim();
+                      if (input) router.push(`/collab/${input}`);
+                    }} className="flex items-center gap-1.5 px-1">
+                      <input
+                        name="roomId"
+                        type="text"
+                        placeholder="Room ID"
+                        className={`flex-1 min-w-0 px-2.5 py-1.5 rounded-lg text-[13px] bg-transparent border ${theme.borderMain} ${theme.textPrimary} placeholder:opacity-40 outline-none focus:border-blue-500/50 transition-colors`}
+                      />
+                      <button type="submit" className="shrink-0 px-3 py-1.5 rounded-lg text-[13px] font-medium bg-blue-600 hover:bg-blue-700 text-white transition-colors">
+                        Join
+                      </button>
+                    </form>
+                  </div>
+                </div>
                 <div className={`w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-xs font-bold text-white shrink-0`} title={userEmail ?? ""} >
                   {userEmail[0].toUpperCase()}
                 </div>
@@ -831,7 +875,7 @@ export default function GeminiClone() {
         </header>
 
         {/* Feed & Welcome */}
-        <div className="flex-1 overflow-y-auto w-full max-w-4xl mx-auto px-4 pb-48 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto scroll-smooth w-full max-w-4xl mx-auto px-4 pb-56 custom-scrollbar">
           {messages.length === 0 ? (
             <div className="mt-20 flex flex-col items-center text-center px-4 max-w-4xl mx-auto">
               <h1 className={`text-3xl font-semibold mb-2 tracking-tight ${theme.textPrimary} transition-colors duration-500`}>
@@ -897,7 +941,7 @@ export default function GeminiClone() {
         </div>
 
         {/* Input Wrapper */}
-        <div className={`absolute bottom-0 w-full bg-gradient-to-t ${isDarkMode ? 'from-slate-950 via-slate-950' : 'from-white via-white'} to-transparent pt-12 pb-6 px-4 transition-colors duration-500`}>
+        <div className={`absolute bottom-0 w-full z-20 bg-gradient-to-t ${isDarkMode ? 'from-slate-950 via-slate-950' : 'from-white via-white'} to-transparent pt-12 pb-6 px-4 transition-colors duration-500`}>
           <div className="max-w-[850px] mx-auto">
             {/* Hidden Inputs */}
             <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" multiple />

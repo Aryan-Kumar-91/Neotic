@@ -7,6 +7,7 @@ export interface Message {
   role: string;
   content: string;
   thoughts?: Thought[];
+  sender?: string; // email of user who sent the prompt (for collab rooms)
 }
 
 export interface ChatSession {
@@ -15,4 +16,10 @@ export interface ChatSession {
   messages: Message[];
   folder: string | null;
   updatedAt: number;
+}
+
+export interface CollabUser {
+  email: string;
+  color: string;
+  joinedAt: number;
 }

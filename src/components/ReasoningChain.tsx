@@ -210,8 +210,7 @@ export default function ReasoningChain({ thoughts, isGenerating }: { thoughts: a
 
   return (
     <div
-      className="w-full h-[380px] bg-[#0A0A0B] rounded-2xl border border-[#1A1A1C] overflow-hidden mb-6 mt-2 relative"
-      onWheel={(e) => e.stopPropagation()}
+      className="w-full h-[380px] bg-[#0A0A0B] rounded-2xl border border-[#1A1A1C] overflow-hidden mb-6 mt-2 relative z-0 isolate"
     >
       {/* ── Top Bar ── */}
       <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-5 py-3 z-10 border-b border-[#1A1A1C] bg-[#0A0A0B]/90 backdrop-blur-md">
