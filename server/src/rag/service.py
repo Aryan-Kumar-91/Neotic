@@ -1,6 +1,10 @@
+"""
+Service and tools for Retrieval-Augmented Generation (RAG) using Gemini and LangChain.
+"""
 import os
 import uuid
 from typing import Any, Dict, List, Optional
+
 from fastapi import WebSocket
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 from langchain_community.document_loaders import PyPDFLoader, TextLoader
@@ -8,7 +12,6 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import Chroma
 from langchain_core.tools.retriever import create_retriever_tool
 from langchain_core.callbacks import AsyncCallbackHandler
-from langchain_core.messages import HumanMessage
 from langchain.agents import create_agent
 from src.config.env import GOOGLE_API_KEY
 
@@ -34,6 +37,9 @@ class CoTAsyncHandler(AsyncCallbackHandler):
     async def on_tool_start(
         self, serialized: Dict[str, Any], input_str: str, **kwargs: Any
     ) -> None:
+        """
+        Notify the client when a retrieval tool starts executing.
+        """
         new_id = self._get_id()
         await self.websocket.send_json({
             "id": new_id,
@@ -45,6 +51,9 @@ class CoTAsyncHandler(AsyncCallbackHandler):
         self.parent_id = new_id
 
     async def on_tool_end(self, output: str, **kwargs: Any) -> Any:
+        """
+        Notify the client when retrieval completes with the found context.
+        """
         new_id = self._get_id()
         await self.websocket.send_json({
             "id": new_id,
@@ -56,12 +65,21 @@ class CoTAsyncHandler(AsyncCallbackHandler):
         self.parent_id = new_id
 
 def initialize_gemini_rag():
+    """
+    Initialize the ChromaDB vector store and return a LangChain retriever tool.
+    """
     # Use the embeddings model for Gemini
-    embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004", google_api_key=GOOGLE_API_KEY)
+    embeddings = GoogleGenerativeAIEmbeddings(
+        model="models/text-embedding-004", 
+        google_api_key=GOOGLE_API_KEY
+    )
 
     if os.path.exists(PERSIST_DIR) and os.listdir(PERSIST_DIR):
         print("✓ Loading existing Gemini vector database...")
-        vectorstore = Chroma(persist_directory=PERSIST_DIR, embedding_function=embeddings)
+        vectorstore = Chroma(
+            persist_directory=PERSIST_DIR, 
+            embedding_function=embeddings
+        )
     else:
         print("⚠ DB not found. Scraping data for Gemini-precision indexing...")
         all_docs = []
@@ -92,18 +110,24 @@ def initialize_gemini_rag():
     retriever_tool = create_retriever_tool(
         vectorstore.as_retriever(),
         "local_search",
-        "Search your verified PDF or TXT knowledge base for specific facts using Gemini."
+        "Search your verified PDF or TXT knowledge base using Gemini."
     )
     return retriever_tool
 
 def get_rag_tool():
+    """
+    Global getter for the RAG tool with error handling.
+    """
     try:
         return initialize_gemini_rag()
-    except Exception as e:
-        print(f"⚠ Failed to initialize RAG: {e}")
+    except Exception as error:
+        print(f"⚠ Failed to initialize RAG: {error}")
         return None
 
 def create_gemini_agent(callback_handler: CoTAsyncHandler):
+    """
+    Factory function to create a Gemini-powered agent configured with RAG tools.
+    """
     # Chat model setup
     llm = ChatGoogleGenerativeAI(
         model="gemini-2.0-flash-exp", 
@@ -119,6 +143,9 @@ def create_gemini_agent(callback_handler: CoTAsyncHandler):
     agent = create_agent(
         model=llm, 
         tools=tools, 
-        system_prompt="You are a helpful assistant powered by Google Gemini. Use tools to verify facts from the local knowledge base."
+        system_prompt=(
+            "You are a helpful assistant powered by Google Gemini. "
+            "Use tools to verify facts from the local knowledge base."
+        )
     )
     return agent
