@@ -1,3 +1,3 @@
 """
-Data types and definitions for Noetic core operations.
+Data types and definitions for Neotic core operations.
 """

@@ -1,57 +1,47 @@
 import { useState, useEffect } from "react";
 import { ChatSession } from "../@types/index";
 
+// Helper for safe JSON parsing
+const safeParse = (key: string, fallback: any) => {
+  if (typeof window === "undefined") return fallback;
+  try {
+    const val = localStorage.getItem(key);
+    return val ? JSON.parse(val) : fallback;
+  } catch {
+    return fallback;
+  }
+};
+
 export function useChatState() {
-  const [chatHistory, setChatHistory] = useState<ChatSession[]>([]);
-  const [saveChatEnabled, setSaveChatEnabled] = useState(true);
-  const [folders, setFolders] = useState<string[]>([]);
+  const [chatHistory, setChatHistory] = useState<ChatSession[]>(() => safeParse("neotic_chatHistory", []));
+  const [saveChatEnabled, setSaveChatEnabled] = useState(() => {
+    const s = safeParse("neotic_saveChat", true);
+    return typeof s === "boolean" ? s : true;
+  });
+  const [folders, setFolders] = useState<string[]>(() => safeParse("neotic_folders", []));
   const [activeFolder, setActiveFolder] = useState<string | null>(null);
-  const [customInstructions, setCustomInstructions] = useState("");
-  const [deletedChats, setDeletedChats] = useState<ChatSession[]>([]);
+  const [customInstructions, setCustomInstructions] = useState<string>(() => {
+    if (typeof window === "undefined") return "";
+    return localStorage.getItem("neotic_customInstructions") || "";
+  });
+  const [deletedChats, setDeletedChats] = useState<ChatSession[]>(() => safeParse("neotic_deletedChats", []));
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // [PERFORMANCE] Optimistically syncing previous workspace environment states
+  // Mark hydration complete for client-only components
   useEffect(() => {
-    try {
-      const h = localStorage.getItem("noetic_chatHistory");
-      if (h) setChatHistory(JSON.parse(h));
-      
-      const f = localStorage.getItem("noetic_folders");
-      if (f) setFolders(JSON.parse(f));
-      
-      const ci = localStorage.getItem("noetic_customInstructions");
-      if (ci) setCustomInstructions(ci);
-      
-      const bin = localStorage.getItem("noetic_deletedChats");
-      if (bin) setDeletedChats(JSON.parse(bin));
-      
-      const gc = localStorage.getItem("noetic_guest_prompts");
-      // Guest state handled separately since it doesn't align purely with history
-    } catch (e) {
-      console.error("Local storage sync error", e);
-    }
     setIsLoaded(true);
   }, []);
 
+  // Sync state to localStorage on update
   useEffect(() => {
-    if (isLoaded) localStorage.setItem("noetic_chatHistory", JSON.stringify(chatHistory));
-  }, [chatHistory, isLoaded]);
-
-  useEffect(() => {
-    if (isLoaded) localStorage.setItem("noetic_saveChat", JSON.stringify(saveChatEnabled));
-  }, [saveChatEnabled, isLoaded]);
-
-  useEffect(() => {
-    if (isLoaded) localStorage.setItem("noetic_folders", JSON.stringify(folders));
-  }, [folders, isLoaded]);
-
-  useEffect(() => {
-    if (isLoaded) localStorage.setItem("noetic_customInstructions", customInstructions);
-  }, [customInstructions, isLoaded]);
-
-  useEffect(() => {
-    if (isLoaded) localStorage.setItem("noetic_deletedChats", JSON.stringify(deletedChats));
-  }, [deletedChats, isLoaded]);
+    if (isLoaded) {
+      localStorage.setItem("neotic_chatHistory", JSON.stringify(chatHistory));
+      localStorage.setItem("neotic_saveChat", JSON.stringify(saveChatEnabled));
+      localStorage.setItem("neotic_folders", JSON.stringify(folders));
+      localStorage.setItem("neotic_customInstructions", customInstructions);
+      localStorage.setItem("neotic_deletedChats", JSON.stringify(deletedChats));
+    }
+  }, [chatHistory, saveChatEnabled, folders, customInstructions, deletedChats, isLoaded]);
 
   return {
     chatHistory, setChatHistory,

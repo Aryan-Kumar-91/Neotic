@@ -3,8 +3,8 @@ import Link from "next/link";
 import { ArrowLeft, Shield } from "lucide-react";
 
 export const metadata = {
-  title: "Privacy Policy | Noetic",
-  description: "Privacy policy and terms of service for Noetic AI reasoning platform.",
+  title: "Privacy Policy | Neotic",
+  description: "Privacy policy and terms of service for Neotic AI reasoning platform.",
 };
 
 export default function PrivacyPage() {
@@ -17,7 +17,7 @@ export default function PrivacyPage() {
           </Link>
           <div className="flex items-center text-lg font-semibold text-slate-900">
             <Shield className="w-5 h-5 mr-2 text-blue-600" />
-            <span>Noetic Privacy Policy</span>
+            <span>Neotic Privacy Policy</span>
           </div>
         </div>
       </header>
@@ -26,13 +26,13 @@ export default function PrivacyPage() {
         <article className="prose prose-slate max-w-none">
           <h1 className="text-3xl font-bold mb-6 tracking-tight">Privacy & Data Handling</h1>
           <p className="text-lg text-slate-600 mb-8 leading-relaxed">
-            Effective Date: March 2026. This page details how Noetic handles your data during AI reasoning tasks.
+            Effective Date: March 2026. This page details how Neotic handles your data during AI reasoning tasks.
           </p>
 
           <section className="mb-10">
             <h2 className="text-2xl font-semibold mb-4 text-slate-800">1. Data Isolation</h2>
             <p className="text-slate-600 leading-relaxed">
-              Noetic operates on an isolated AI reasoning model. Your prompts, conversation history, and uploaded documents 
+              Neotic operates on an isolated AI reasoning model. Your prompts, conversation history, and uploaded documents 
               are processed strictly within your authenticated session context. We do not use your private data to train 
               our foundational models unless explicitly opted-in.
             </p>
