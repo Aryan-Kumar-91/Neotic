@@ -6,13 +6,14 @@ import uuid
 from typing import Any, Dict, List, Optional
 
 from fastapi import WebSocket
-from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
-from langchain_community.document_loaders import PyPDFLoader, TextLoader
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_community.vectorstores import Chroma
-from langchain_core.tools.retriever import create_retriever_tool
-from langchain_core.callbacks import AsyncCallbackHandler
 from langchain.agents import create_agent
+from langchain_community.document_loaders import PyPDFLoader, TextLoader
+from langchain_community.vectorstores import Chroma
+from langchain_core.callbacks import AsyncCallbackHandler
+from langchain_core.tools.retriever import create_retriever_tool
+from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+
 from src.config.env import GOOGLE_API_KEY
 
 # Ensure data and db directories exist relative to the server root
@@ -31,7 +32,11 @@ class CoTAsyncHandler(AsyncCallbackHandler):
         self.websocket = websocket
         self.parent_id = parent_id
 
-    def _get_id(self):
+    @staticmethod
+    def _get_id():
+        """
+        Produce a unique identifier for a step.
+        """
         return str(uuid.uuid4())
 
     async def on_tool_start(
@@ -70,43 +75,46 @@ def initialize_gemini_rag():
     """
     # Use the embeddings model for Gemini
     embeddings = GoogleGenerativeAIEmbeddings(
-        model="models/text-embedding-004", 
+        model="models/text-embedding-004",
         google_api_key=GOOGLE_API_KEY
     )
 
     if os.path.exists(PERSIST_DIR) and os.listdir(PERSIST_DIR):
         print("✓ Loading existing Gemini vector database...")
         vectorstore = Chroma(
-            persist_directory=PERSIST_DIR, 
+            persist_directory=PERSIST_DIR,
             embedding_function=embeddings
         )
     else:
         print("⚠ DB not found. Scraping data for Gemini-precision indexing...")
         all_docs = []
         if os.path.exists(DATA_DIR):
-            for file in os.listdir(DATA_DIR):
-                file_path = os.path.join(DATA_DIR, file)
-                if file.endswith('.pdf'):
+            for file_name in os.listdir(DATA_DIR):
+                file_path = os.path.join(DATA_DIR, file_name)
+                if file_name.endswith('.pdf'):
                     loader = PyPDFLoader(file_path)
                     all_docs.extend(loader.load())
-                elif file.endswith('.txt'):
+                elif file_name.endswith('.txt'):
                     loader = TextLoader(file_path)
                     all_docs.extend(loader.load())
-        
+
         if not all_docs:
             print("⚠ No source documents found in 'data/' folder.")
             return None
 
-        text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=1000,
+            chunk_overlap=100
+        )
         splits = text_splitter.split_documents(all_docs)
 
         print(f"✓ Persisting {len(splits)} chunks to Gemini DB...")
         vectorstore = Chroma.from_documents(
-            documents=splits, 
+            documents=splits,
             embedding=embeddings,
             persist_directory=PERSIST_DIR
         )
-    
+
     retriever_tool = create_retriever_tool(
         vectorstore.as_retriever(),
         "local_search",
@@ -130,19 +138,19 @@ def create_gemini_agent(callback_handler: CoTAsyncHandler):
     """
     # Chat model setup
     llm = ChatGoogleGenerativeAI(
-        model="gemini-2.0-flash-exp", 
-        temperature=0, 
+        model="gemini-2.0-flash-exp",
+        temperature=0,
         streaming=True,
         google_api_key=GOOGLE_API_KEY
     )
-    
+
     rag_tool = get_rag_tool()
     tools = [rag_tool] if rag_tool else []
-    
+
     # Factory-based agent
     agent = create_agent(
-        model=llm, 
-        tools=tools, 
+        model=llm,
+        tools=tools,
         system_prompt=(
             "You are a helpful assistant powered by Google Gemini. "
             "Use tools to verify facts from the local knowledge base."
