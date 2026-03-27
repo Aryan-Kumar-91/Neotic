@@ -1,5 +1,5 @@
 """
-CORS Middleware Configuration for the Noetic Backend.
+CORS Middleware Configuration for the Neotic Backend.
 """
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI

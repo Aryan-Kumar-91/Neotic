@@ -126,7 +126,7 @@ export default function LoginPage() {
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mb-4 shadow-lg shadow-blue-500/25">
               <Brain className="w-6 h-6 text-white" />
             </div>
-            <h1 className={`text-2xl font-semibold tracking-tight ${theme.textPrimary}`}>Noetic</h1>
+            <h1 className={`text-2xl font-semibold tracking-tight ${theme.textPrimary}`}>Neotic</h1>
             <p className={`text-sm mt-1 ${theme.textSecondary}`}>
               {mode === "signin" ? "Sign in to continue reasoning" : "Create your account"}
             </p>
@@ -263,7 +263,7 @@ export default function LoginPage() {
           </form>
 
           <p className={`text-center text-xs ${theme.textMuted} mt-6`}>
-            By continuing you agree to Noetic&apos;s{" "}
+            By continuing you agree to Neotic&apos;s{" "}
             <a href="/privacy" className={`underline hover:text-blue-500 transition-colors`}>
               Privacy Policy
             </a>
@@ -271,7 +271,7 @@ export default function LoginPage() {
         </div>
 
         <p className={`text-center text-[11px] font-medium mt-4 ${theme.textMuted} tracking-wide uppercase`}>
-          Noetic AI Reasoning Platform &mdash; Chain-of-Thought
+          Neotic AI Reasoning Platform &mdash; Chain-of-Thought
         </p>
       </div>
     </div>

@@ -1,5 +1,5 @@
 """
-Environment variable management and validation for the Noetic backend.
+Environment variable management and validation for the Neotic backend.
 """
 import os
 from dotenv import load_dotenv

@@ -1,4 +1,4 @@
-# Noetic: Advanced AI Reasoning & Visualization
+# Neotic: Advanced AI Reasoning & Visualization
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![React](https://img.shields.io/badge/React-19.2-61DAFB?logo=react&logoColor=black)](https://react.dev/)
@@ -6,7 +6,7 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.109-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 
-**Noetic** is an enterprise-grade AI reasoning platform that bridges the gap between complex Chain-of-Thought (CoT) processes and user understanding. By visualizing internal analytical steps as a dynamic Directed Acyclic Graph (DAG), Noetic provides unprecedented transparency into AI decision-making.
+**Neotic** is an enterprise-grade AI reasoning platform that bridges the gap between complex Chain-of-Thought (CoT) processes and user understanding. By visualizing internal analytical steps as a dynamic Directed Acyclic Graph (DAG), Neotic provides unprecedented transparency into AI decision-making.
 
 ---
 
@@ -47,9 +47,9 @@ Developed and presented at **HIRE-4-THON**, a National Level Hackathon organized
 
 ## System Architecture
 
-![Noetic Architecture](./public/SYSTEM%20ARCHITECTURE.png)
+![Neotic Architecture](./public/SYSTEM%20ARCHITECTURE.png)
 
-The Noetic engine orchestrates a low-latency pipeline between the user and the LLM, streaming thought fragments in real-time to prevent "black box" waiting periods.
+The Neotic engine orchestrates a low-latency pipeline between the user and the LLM, streaming thought fragments in real-time to prevent "black box" waiting periods.
 
 ---
 
@@ -148,4 +148,4 @@ This repository is licensed under the **GNU General Public License v3.0**. See t
 
 ---
 
-_Developed with excellence by the Team Noetic (2026)._
+_Developed with excellence by the Team Neotic (2026)._
