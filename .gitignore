@@ -1,0 +1,35 @@
+# Environments
+.env
+.env.local
+.env.*.local
+venv/
+env/
+.venv/
+
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+__pycache__/
+*.py[cod]
+
+# Next.js
+.next/
+out/
+build/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+*.suo
+*.orig
+
+# Python specifics
+*.so
+*.egg
+*.egg-info/
+dist/
+.pytest_cache/
+.coverage
+htmlcov/

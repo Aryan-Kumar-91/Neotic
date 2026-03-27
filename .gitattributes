@@ -1,0 +1,19 @@
+# Auto-detect text files, ensure they have normalized line endings
+* text=auto
+
+# Language Statistics Overrides (Linguist)
+*.tsx linguist-language=TypeScript
+*.ts linguist-language=TypeScript
+*.py linguist-language=Python
+
+# Exclude generated/dependency files from language stats
+node_modules/* linguist-vendored
+*.min.js linguist-vendored
+.next/* linguist-vendored
+
+# Enforce LF on specific file types
+*.sh text eol=lf
+*.py text eol=lf
+*.tsx text eol=lf
+*.ts text eol=lf
+*.json text eol=lf
