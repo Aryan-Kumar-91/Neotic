@@ -4,7 +4,7 @@ import base64
 import json
 from typing import List, Optional
 from src.config.env import GOOGLE_API_KEY
-from src._types.schemas import FileData
+from src.types.schemas import FileData
 
 genai.configure(api_key=GOOGLE_API_KEY)
 

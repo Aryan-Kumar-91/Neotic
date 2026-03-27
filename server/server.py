@@ -1,7 +1,7 @@
 import uvicorn
 from fastapi import FastAPI, WebSocket
 from src.middlewares.cors import setup_cors
-from src.routes.chat_routes import router as chat_router
+from src.routes.chatroutes import router as chat_router
 from src.rag.websocket import handle_rag_websocket
 
 app = FastAPI(title="Noetic Backend Core")

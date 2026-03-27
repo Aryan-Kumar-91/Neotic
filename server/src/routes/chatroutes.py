@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
-from src.controllers.chat_controller import process_chat
-from src._types.schemas import ChatRequest
+from src.controllers.chatcontroller import process_chat
+from src.types.schemas import ChatRequest
 
 router = APIRouter()
 
