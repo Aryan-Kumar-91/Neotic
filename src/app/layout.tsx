@@ -15,6 +15,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Neotic | AI-Powered Reasoner",
   description: "Advanced Chain-of-Thought reasoning with real-time RAG visualization.",
+  icons: {
+    icon: "/logo-icon.png",
+  },
 };
 
 export default function RootLayout({
