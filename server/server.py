@@ -1,3 +1,6 @@
+"""
+Noetic Backend Core - Main entry point for the FastAPI server.
+"""
 import uvicorn
 from fastapi import FastAPI, WebSocket
 from src.middlewares.cors import setup_cors
@@ -15,6 +18,9 @@ app.include_router(chat_router, prefix="/api")
 # Handle RAG WebSockets (Consolidated from rag-visualizer)
 @app.websocket("/ws/rag")
 async def websocket_rag(websocket: WebSocket):
+    """
+    WebSocket endpoint for real-time RAG visualization signals.
+    """
     await handle_rag_websocket(websocket)
 
 if __name__ == "__main__":
