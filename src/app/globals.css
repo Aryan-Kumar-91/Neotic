@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /* Hide scrollbars globally */
-* {
+body {
   -ms-overflow-style: none; /* IE and Edge */
   scrollbar-width: none; /* Firefox */
 }
@@ -20,6 +20,7 @@ html {
 }
 
 /* stylelint-disable at-rule-no-unknown */
+/* CSSLint: ignore unexpected at-rule */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

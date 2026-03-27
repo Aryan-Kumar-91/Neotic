@@ -3,7 +3,7 @@ Service and tools for Retrieval-Augmented Generation (RAG) using Gemini and Lang
 """
 import os
 import uuid
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from fastapi import WebSocket
 from langchain.agents import create_agent
@@ -40,7 +40,10 @@ class CoTAsyncHandler(AsyncCallbackHandler):
         return str(uuid.uuid4())
 
     async def on_tool_start(
-        self, serialized: Dict[str, Any], input_str: str, **kwargs: Any
+        self,
+        _serialized: Dict[str, Any],
+        input_str: str,
+        **_kwargs: Any
     ) -> None:
         """
         Notify the client when a retrieval tool starts executing.
@@ -55,7 +58,7 @@ class CoTAsyncHandler(AsyncCallbackHandler):
         })
         self.parent_id = new_id
 
-    async def on_tool_end(self, output: str, **kwargs: Any) -> Any:
+    async def on_tool_end(self, output: str, **_kwargs: Any) -> Any:
         """
         Notify the client when retrieval completes with the found context.
         """
@@ -126,13 +129,14 @@ def get_rag_tool():
     """
     Global getter for the RAG tool with error handling.
     """
+    # pylint: disable=broad-except
     try:
         return initialize_gemini_rag()
     except Exception as error:
         print(f"⚠ Failed to initialize RAG: {error}")
         return None
 
-def create_gemini_agent(callback_handler: CoTAsyncHandler):
+def create_gemini_agent():
     """
     Factory function to create a Gemini-powered agent configured with RAG tools.
     """
