@@ -41,5 +41,14 @@ npm run dev
 # Running on http://localhost:3000
 ```
 
+## The Team
+
+| Name | USN | Project Role |
+| :--- | :--- | :--- |
+| **Aryan Kumar** | 1KG23AD002 | **Team Leader** • Project Management & System Architecture |
+| **Tanmay Singh** | 1KG23AD056 | **Frontend Developer** • UI/UX Design & WebSocket Integration |
+| **Pranav** | 1KG23CB038 | **Backend Developer** • API Design & MVC Implementation |
+| **G Pavan** | 1KG23CB014 | **AI Specialist** • RAG Systems & Prompt Engineering |
+
 ## License
 This project is licensed under the [GNU General Public License v3.0](LICENSE).
