@@ -33,3 +33,8 @@ dist/
 .pytest_cache/
 .coverage
 htmlcov/
+
+# Vector Databases
+chroma_db/
+chroma_db_gemini/
+chroma_db_pro/
