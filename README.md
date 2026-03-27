@@ -9,6 +9,17 @@ Noetic is an advanced, enterprise-grade AI chat application that visualizes Chai
 - **Enterprise MVC Architecture:** Monolith-free design. Clean separation of concerns with isolated `services/`, `controllers/`, and `middlewares/` on the backend, paired with custom hook extractions on the frontend.
 - **Sleek Aesthetic:** High-fidelity Glassmorphic UI, dynamic Dark/Light modes, animated particle backgrounds, and strict custom Markdown parsing.
 
+## System Architecture
+
+![System Architecture](./public/SYSTEM%20ARCHITECTURE.png)
+
+The Noetic architecture is designed for low-latency AI reasoning and real-time visualization:
+1. **Frontend (Next.js 16)**: Connects to the backend via REST (for chat) and WebSockets (for RAG).
+2. **Real-time Reasoning Engine**: Streams Chain-of-Thought steps as they are generated, rather than waiting for the final answer.
+3. **Graph DAG (React Flow)**: Dynamically renders each thought step as a node in an interactive graph, allowing users to trace the AI's logic visually.
+4. **RAG Component (LangChain + ChromaDB)**: Enables the AI to query localized PDF/TXT knowledge bases before generating thoughts.
+5. **Backend Core (FastAPI)**: Manages model orchestration, session state, and multimodal file processing.
+
 ## Tech Stack
 ### Frontend
 - **Framework:** Next.js 16 (React 19)
