@@ -294,7 +294,7 @@ export default function CollabRoom() {
                 }
               }}
               disabled={isGenerating}
-              placeholder="Ask Noetic collaboratively..."
+              placeholder="Ask Neotic collaboratively..."
               className="w-full bg-transparent outline-none resize-none text-[15px] text-[#E3E3E3] placeholder-[#C4C7C5]/50 leading-6"
               rows={1}
               style={{ minHeight: "24px" }}
