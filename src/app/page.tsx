@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -18,7 +18,7 @@ import { sendPromptToAgent } from "../api/chatClient";
 import { useChatState } from "../hooks/useChatState";
 
 // [UI COMPONENT] Lightweight Markdown parser to beautifully render LLM code blocks without bulky dependencies
-const MessageContent = ({ content, isUser, theme }: { content: string, isUser: boolean, theme: any }) => {
+const MessageContent = ({ content, isUser, theme }: { content: string, isUser: boolean, theme: { textPrimary?: string } }) => {
   if (isUser) {
     return <p className={`whitespace-pre-wrap leading-relaxed text-[15px] ${theme ? '' : ''}`}>{content}</p>;
   }
@@ -125,7 +125,7 @@ export default function GeminiClone() {
       if (gc) setGuestPromptCount(parseInt(gc, 10));
     } catch {}
     setIsLoaded(true);
-  }, []);
+  }, [setIsLoaded]);
 
   // Sync state to localStorage
   useEffect(() => {
@@ -358,20 +358,14 @@ export default function GeminiClone() {
     setIsGenerating(false);
   };
 
-  const filteredHistory = chatHistory.filter(chat => {
-    const matchesSearch = !searchQuery || 
-      chat.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-      chat.messages.some((m: Message) => m.content.toLowerCase().includes(searchQuery.toLowerCase()));
-    const matchesFolder = activeFolder ? chat.folder === activeFolder : true;
-    return matchesSearch && matchesFolder;
-  });
+
 
   return (
     <div className={`flex h-screen ${theme.bgApp} ${theme.textPrimary} font-sans selection:bg-blue-500/30 overflow-hidden transition-colors duration-500 relative`}>
       {isDarkMode && <StarBackground />}
       
       {/* Sidebar Wrapper */}
-      <aside className={`${theme.bgSidebar} border-r ${theme.borderMain} flex flex-col h-full py-4 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${sidebarOpen ? 'w-[280px] translate-x-0' : 'w-0 -translate-x-full opacity-0 overflow-hidden'} z-20`}>
+      <aside className={`${theme.bgSidebar} border-r ${theme.borderMain} flex flex-col h-full py-4 transition-all duration-300 ease-in-out ${sidebarOpen ? 'w-[280px] translate-x-0' : 'w-0 -translate-x-full opacity-0 overflow-hidden'} z-20`}>
         <div className="px-4 mb-6 flex items-center justify-between relative">
           <button 
             onClick={() => setSidebarOpen(false)} 
@@ -541,7 +535,7 @@ export default function GeminiClone() {
                   onClick={() => setSaveChatEnabled(!saveChatEnabled)}
                   className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${saveChatEnabled ? 'bg-blue-600' : 'bg-slate-400 dark:bg-[#1E1E20]'}`}
                 >
-                  <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ease-[cubic-bezier(0.4,0,0.2,1)] ${saveChatEnabled ? 'translate-x-4' : 'translate-x-1'}`} />
+                  <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ease-in-out ${saveChatEnabled ? 'translate-x-4' : 'translate-x-1'}`} />
                 </button>
               </div>
             </div>
@@ -755,7 +749,7 @@ export default function GeminiClone() {
               {settingsTab === "about" && (
                 <div className={`flex flex-col gap-4 text-sm ${theme.textSecondary}`}>
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shrink-0">
+                    <div className="w-10 h-10 rounded-xl bg-linear-to-br from-blue-500 to-indigo-600 flex items-center justify-center shrink-0">
                       <Bot className="w-5 h-5 text-white" />
                     </div>
                     <div>
@@ -763,13 +757,13 @@ export default function GeminiClone() {
                       <p className={`text-xs ${theme.textMuted}`}>AI Reasoning Platform — v1.0.0</p>
                     </div>
                   </div>
-                  <p>Noetic is a chain-of-thought reasoning interface powered by a custom Go transformer backend. It visualises attention maps, reasoning steps, and tool calls in real time.</p>
+                  <p>Noetic is a chain-of-thought reasoning interface powered by a Python FastAPI core. It visualises reasoning steps, tool calls, and multimodal analysis in real time using Google Gemini Flash models.</p>
                   <div className={`rounded-xl border ${theme.borderMain} divide-y ${theme.borderMain} text-xs`}>
                     {[
                       ["Frontend", "Next.js 16 · React 19 · Tailwind CSS 4"],
-                      ["Backend", "Go · Gorilla Mux · Redis · Kafka"],
+                      ["Backend", "Python · FastAPI · Uvicorn · Gemini SDK"],
                       ["Auth", "Supabase JWT"],
-                      ["Built for", "Hackathon 2026"],
+                      ["Built for", "Noetic Project 2026"],
                     ].map(([k, v]) => (
                       <div key={k} className="flex items-center px-3 py-2 gap-3">
                         <span className={`w-20 shrink-0 ${theme.textMuted}`}>{k}</span>
@@ -852,7 +846,7 @@ export default function GeminiClone() {
                     </form>
                   </div>
                 </div>
-                <div className={`w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-xs font-bold text-white shrink-0`} title={userEmail ?? ""} >
+                <div className={`w-8 h-8 rounded-full bg-linear-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-xs font-bold text-white shrink-0`} title={userEmail ?? ""} >
                   {userEmail[0].toUpperCase()}
                 </div>
                 <button
@@ -892,7 +886,7 @@ export default function GeminiClone() {
                      key={idx}
                      onClick={() => submitPrompt(prompt.text)}
                      disabled={isGenerating}
-                     className={`text-left ${theme.bgModule} ${theme.hoverBg} p-4 rounded-xl min-h-[120px] flex flex-col border ${theme.borderMain} transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] hover:-translate-y-0.5 ${isGenerating ? 'opacity-50 cursor-not-allowed' : ''}`}
+                     className={`text-left ${theme.bgModule} ${theme.hoverBg} p-4 rounded-xl min-h-[120px] flex flex-col border ${theme.borderMain} transition-all duration-200 ease-in-out hover:-translate-y-0.5 ${isGenerating ? 'opacity-50 cursor-not-allowed' : ''}`}
                    >
                      <p className={`${theme.textSecondary} text-sm leading-relaxed line-clamp-4`}>{prompt.text}</p>
                    </button>
@@ -941,7 +935,7 @@ export default function GeminiClone() {
         </div>
 
         {/* Input Wrapper */}
-        <div className={`absolute bottom-0 w-full z-20 bg-gradient-to-t ${isDarkMode ? 'from-slate-950 via-slate-950' : 'from-white via-white'} to-transparent pt-12 pb-6 px-4 transition-colors duration-500`}>
+        <div className={`absolute bottom-0 w-full z-20 bg-linear-to-t ${isDarkMode ? 'from-slate-950 via-slate-950' : 'from-white via-white'} to-transparent pt-12 pb-6 px-4 transition-colors duration-500`}>
           <div className="max-w-[850px] mx-auto">
             {/* Hidden Inputs */}
             <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" multiple />
@@ -1060,7 +1054,7 @@ export default function GeminiClone() {
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setShowGuestModal(false)}>
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
             <div className={`relative w-full max-w-sm ${theme.bgModule} border ${theme.borderMain} rounded-2xl shadow-2xl p-6 text-center animate-in fade-in zoom-in duration-200`} onClick={e => e.stopPropagation()}>
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-500/25">
+              <div className="w-12 h-12 rounded-xl bg-linear-to-br from-blue-500 to-indigo-600 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-500/25">
                 <Bot className="w-6 h-6 text-white" />
               </div>
               <h2 className={`text-lg font-bold ${theme.textPrimary} mb-2`}>Guest Limit Reached</h2>

@@ -1,11 +1,10 @@
 "use client";
 
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import ReactFlow, {
   Background,
   Controls,
   Node,
-  Edge,
   useNodesState,
   useEdgesState,
   useReactFlow,
@@ -13,8 +12,7 @@ import ReactFlow, {
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 
-const nodeTypes = {};
-const edgeTypes = {};
+
 
 // We wrap the inner component so we can use the useReactFlow hook
 function Flow() {

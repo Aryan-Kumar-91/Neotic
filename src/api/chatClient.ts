@@ -1,7 +1,3 @@
-import { Message, ChatSession } from "../@types/index";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8001";
-
 // Convert a File to a base64 data string
 async function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -18,11 +14,16 @@ export interface FileAttachment {
   data: string; // base64
 }
 
+interface Thought {
+  step: string;
+  content: string;
+}
+
 export async function sendPromptToAgent(
   input: string,
   abortController: AbortController,
   attachments?: File[]
-): Promise<{ thoughts: any[]; final_answer: string }> {
+): Promise<{ thoughts: Thought[]; final_answer: string }> {
   
   // Build attachment payloads
   const files: FileAttachment[] = [];
