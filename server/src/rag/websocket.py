@@ -20,7 +20,7 @@ async def handle_rag_websocket(websocket: WebSocket):
 
     try:
         while True:
-            # Receive input from client (e.g., { "question": "What is Noetic?" })
+            # Receive input from client (e.g., { "question": "What is Neotic?" })
             data = await websocket.receive_text()
             user_input = json.loads(data).get("question")
 

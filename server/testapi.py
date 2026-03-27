@@ -1,5 +1,5 @@
 """
-Test utility for the Noetic Chat API.
+Test utility for the Neotic Chat API.
 """
 import json
 import urllib.error
