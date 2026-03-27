@@ -1,13 +1,13 @@
 """
 Service for interacting with Google Gemini models and generating Chain-of-Thought responses.
 """
-
 import base64
 import json
 import re
 from typing import List, Optional
 
 import google.generativeai as google_genai
+
 from src.config.env import GOOGLE_API_KEY
 from src.types.schemas import FileData
 
@@ -72,7 +72,7 @@ def generate_thoughts(prompt: str, files: Optional[List[FileData]] = None) -> di
                             f"\n\n--- Attached File: {f_data.name} ---\n"
                             f"{text_val}\n--- End of {f_data.name} ---"
                         )
-                        print(f"✓ Attached text file: {f_data.name} ({f_mime}, {len(text_val)} chars)")
+                        print(f"✓ Attached text: {f_data.name} ({f_mime}, {len(text_val)} chars)")
                     except UnicodeDecodeError:
                         content_parts[0] += (
                             f"\n\n[Binary file attached: {f_data.name} "

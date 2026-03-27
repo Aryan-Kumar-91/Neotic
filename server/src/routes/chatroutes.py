@@ -5,9 +5,9 @@ from fastapi import APIRouter, HTTPException
 from src.controllers.chatcontroller import process_chat
 from src.types.schemas import ChatRequest
 
-router = APIRouter()
+ROUTER = APIRouter()
 
-@router.post("/chat")
+@ROUTER.post("/chat")
 async def generate_cot(request: ChatRequest):
     """
     Handle chat requests and produce Chain-of-Thought reasoning.
