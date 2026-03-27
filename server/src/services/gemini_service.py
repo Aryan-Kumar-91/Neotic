@@ -1,6 +1,7 @@
 import google.generativeai as genai
 import re
 import base64
+import json
 from typing import List, Optional
 from src.config.env import GOOGLE_API_KEY
 from src._types.schemas import FileData
@@ -72,5 +73,12 @@ def generate_thoughts(prompt: str, files: Optional[List[FileData]] = None) -> di
     
     if not match:
         return {"thoughts": [], "final_answer": response.text}
-        
-    return clean_text
+    
+    try:
+        data = json.loads(match.group(0))
+        # Ensure it has the correct structure
+        if "thoughts" not in data or "final_answer" not in data:
+            return {"thoughts": [], "final_answer": response.text}
+        return data
+    except Exception:
+        return {"thoughts": [], "final_answer": response.text}

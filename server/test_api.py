@@ -2,8 +2,8 @@ import urllib.request
 import json
 import urllib.error
 
-url = 'http://127.0.0.1:8000/api/reason'
-data = json.dumps({'query': 'test'})
+url = 'http://127.0.0.1:8001/api/chat'
+data = json.dumps({'prompt': 'test'})
 req = urllib.request.Request(url, data=data.encode('utf-8'), headers={'Content-Type': 'application/json'})
 
 try:
