@@ -58,4 +58,4 @@ async def handle_rag_websocket(websocket: WebSocket):
             print("⚠ Connection closed while reporting error.")
         except Exception:  # pylint: disable=broad-except
             # Fallback for unexpected closure issues.
-            pass
+            print("⚠ Unexpected error during WebSocket cleanup.")
