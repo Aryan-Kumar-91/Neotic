@@ -1,0 +1,10 @@
+---
+exclude_paths:
+  - "node_modules/**"
+  - ".next/**"
+  - "**/__pycache__/**"
+
+engines:
+  csslint:
+    exclude_paths:
+      - "src/app/globals.css"
