@@ -1,6 +1,7 @@
 """
 API routes for chat-related operations.
 """
+# pylint: disable=import-error
 from fastapi import APIRouter, HTTPException
 from src.controllers.chatcontroller import process_chat
 from src.types.schemas import ChatRequest

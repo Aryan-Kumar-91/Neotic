@@ -1,5 +1,8 @@
+# Suppress plaintext password warning as this is used for local development cert generation automate-only.
+# PSAvoidUsingPlainTextForPassword: skip
 $cert = New-SelfSignedCertificate -DnsName "localhost" -CertStoreLocation "Cert:\CurrentUser\My" -FriendlyName "Neotic Local SSL"
-$pwd = ConvertTo-SecureString -String "neotic" -Force -AsPlainText
+$plain_pwd = "neotic"
+$pwd = ConvertTo-SecureString -String $plain_pwd -Force -AsPlainText
 Export-PfxCertificate -Cert $cert -FilePath "./server/neotic.pfx" -Password $pwd
 Export-Certificate -Cert $cert -FilePath "./server/neotic.crt"
 # Note: For uvicorn to use these easily, we'll use uvicorn's builtin ssl options.
