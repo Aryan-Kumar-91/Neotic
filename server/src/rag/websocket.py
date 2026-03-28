@@ -3,6 +3,7 @@ WebSocket handler for real-time RAG visualization and streaming.
 """
 import json
 import uuid
+# pylint: disable=import-error
 from fastapi import WebSocket, WebSocketDisconnect
 from langchain_core.messages import HumanMessage
 from src.rag.service import CoTAsyncHandler, create_gemini_agent
@@ -48,12 +49,13 @@ async def handle_rag_websocket(websocket: WebSocket):
 
     except WebSocketDisconnect:
         print("🔌 RAG Client disconnected.")
-    except Exception as websocket_error:
-        # pylint: disable=broad-except
+    except Exception as websocket_error:  # pylint: disable=broad-except
         print(f"❌ RAG WebSocket Error: {websocket_error}")
         try:
             await websocket.send_json({"error": str(websocket_error)})
-        except Exception:
-            # Reached when client disconnected before error could be sent.
-            # pylint: disable=broad-except
+        except (WebSocketDisconnect, RuntimeError):
+            # Client disconnected or connection closed during error reporting.
+            print("⚠ Connection closed while reporting error.")
+        except Exception:  # pylint: disable=broad-except
+            # Fallback for unexpected closure issues.
             pass

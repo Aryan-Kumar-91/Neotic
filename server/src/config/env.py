@@ -2,6 +2,7 @@
 Environment variable management and validation for the Neotic backend.
 """
 import os
+# pylint: disable=import-error
 from dotenv import load_dotenv
 
 load_dotenv()
