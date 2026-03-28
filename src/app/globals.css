@@ -1,4 +1,3 @@
-/* csslint ignore:start */
 @import "tailwindcss";
 
 /* Hide scrollbars globally */
@@ -69,4 +68,3 @@ html {
 .animate-slow-rotate {
   animation: slow-rotate 400s linear infinite;
 }
-/* csslint ignore:end */
