@@ -16,6 +16,9 @@ import { Message, ChatSession } from "../@types/index";
 import { HOT_TOPICS, PLACEHOLDER_IDEAS } from "../utils/constants";
 import { sendPromptToAgent } from "../api/chatClient";
 import { useChatState } from "../hooks/useChatState";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { atomDark, materialLight } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { Check, Copy, Code, FileCode, Terminal, Globe } from "lucide-react";
 
 interface ThemeProps {
   bgApp: string;
@@ -34,41 +37,107 @@ interface ThemeProps {
   accentShadow: string;
 }
 
-const MessageContent = ({ content, isUser, theme }: { content: string; isUser: boolean; theme: ThemeProps }) => {
+const CodeBlock = ({ code, lang, isDarkMode }: { code: string; lang: string; isDarkMode: boolean }) => {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const getIcon = () => {
+    const l = lang.toLowerCase();
+    if (["js", "jsx", "ts", "tsx", "javascript", "typescript"].includes(l)) return <FileCode className="w-3.5 h-3.5" />;
+    if (["html", "css", "scss", "less"].includes(l)) return <Globe className="w-3.5 h-3.5" />;
+    if (["sh", "bash", "zsh", "shell", "powershell", "ps1"].includes(l)) return <Terminal className="w-3.5 h-3.5" />;
+    return <Code className="w-3.5 h-3.5" />;
+  };
+
+  return (
+    <div className="my-5 rounded-2xl overflow-hidden border border-slate-200 dark:border-white/10 shadow-2xl group ring-1 ring-slate-200/50 dark:ring-white/5 transition-all duration-300 hover:shadow-purple-500/10">
+      <div className="flex items-center justify-between px-4 py-2 bg-slate-100/80 dark:bg-white/5 border-b border-slate-200 dark:border-white/10 backdrop-blur-sm">
+        <div className="flex items-center gap-2">
+          <span className="text-slate-500 dark:text-slate-400 opacity-60">{getIcon()}</span>
+          <span className="text-xs font-mono font-medium text-slate-500 dark:text-slate-400 lowercase tracking-wider">{lang || "code"}</span>
+        </div>
+        <button 
+          onClick={handleCopy}
+          className={`group/btn relative flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all duration-300 overflow-hidden ${
+            copied ? "bg-green-500/10 text-green-500" : "hover:bg-slate-200 dark:hover:bg-white/10 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+          }`}
+        >
+          {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3 transition-transform group-hover/btn:scale-110" />}
+          <span>{copied ? "Copied" : "Copy"}</span>
+          {copied && <span className="absolute inset-0 bg-green-500/5 animate-pulse" />}
+        </button>
+      </div>
+      <div className="relative group/code">
+        <SyntaxHighlighter
+          language={lang || "javascript"}
+          style={isDarkMode ? atomDark : materialLight}
+          customStyle={{
+            margin: 0,
+            padding: "1.25rem",
+            fontSize: "0.875rem",
+            background: isDarkMode ? "transparent" : "#FAFAFA",
+            lineHeight: "1.6",
+          }}
+          className="custom-scrollbar bg-transparent!"
+        >
+          {code.trim()}
+        </SyntaxHighlighter>
+        <div className="absolute inset-0 pointer-events-none bg-linear-to-r from-transparent via-transparent to-slate-200/5 dark:to-white/5 opacity-0 group-hover/code:opacity-100 transition-opacity" />
+      </div>
+    </div>
+  );
+};
+
+const MessageContent = ({ content, isUser, theme, isDarkMode }: { content: string; isUser: boolean; theme: ThemeProps; isDarkMode: boolean }) => {
   if (isUser) {
     return <p className="whitespace-pre-wrap leading-relaxed text-[15px]">{content}</p>;
+  }
+
+  // Automatic code detection for responses without backticks
+  const detectRawCode = (text: string) => {
+    if (text.startsWith("```")) return null;
+    const codeIndicators = [/^import /, /^const /, /^let /, /^var /, /^function /, /^class /, /^@import /, /^public class /, /^def /, /^#include /, /^\{/];
+    const lines = text.trim().split("\n");
+    if (lines.length > 3) {
+      const matchCount = lines.slice(0, 5).filter(line => codeIndicators.some(regex => regex.test(line))).length;
+      if (matchCount >= 1 || (lines.length > 5 && lines.every(l => l.startsWith("  ") || l.startsWith("\t") || l === ""))) {
+        return { code: text.trim(), lang: "code" };
+      }
+    }
+    return null;
+  };
+
+  const rawCode = detectRawCode(content);
+  if (rawCode) {
+    return <CodeBlock code={rawCode.code} lang={rawCode.lang} isDarkMode={isDarkMode} />;
   }
 
   const parts = content.split(/(```[\s\S]*?(?:```|$))/g).filter(Boolean);
   
   return (
-    <div className={`leading-relaxed text-[15px] ${theme.textPrimary} space-y-3`}>
+    <div className={`leading-relaxed text-[15px] ${theme.textPrimary} space-y-4`}>
       {parts.map((part, index) => {
         if (part.startsWith('```')) {
           const match = part.match(/```(\w*)\n([\s\S]*?)(?:```|$)/);
           if (match) {
             const lang = match[1] || 'code';
             const code = match[2];
-            return (
-              <div key={index} className="my-3 rounded-xl overflow-hidden border border-slate-200 dark:border-white/10 shadow-sm">
-                <div className="flex items-center justify-between px-4 py-2 bg-slate-100 dark:bg-white/5 border-b border-slate-200 dark:border-white/10">
-                  <span className="text-xs font-mono text-slate-500 dark:text-slate-400 lowercase">{lang}</span>
-                  <button 
-                    onClick={() => navigator.clipboard.writeText(code)}
-                    className="text-xs font-medium text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors"
-                  >
-                    Copy
-                  </button>
-                </div>
-                <div className="p-4 overflow-x-auto bg-[#FAFAFA] dark:bg-black/20 custom-scrollbar text-sm font-mono text-slate-800 dark:text-slate-200">
-                  <pre className="whitespace-pre"><code>{code}</code></pre>
-                </div>
-              </div>
-            );
+            return <CodeBlock key={index} code={code} lang={lang} isDarkMode={isDarkMode} />;
           }
-          return <p key={index} className="whitespace-pre-wrap">{part.replace(/```/g, '')}</p>;
+          const smallMatch = part.match(/```(\w*)\s([\s\S]*?)(?:```|$)/);
+           if (smallMatch) {
+            const lang = smallMatch[1] || 'code';
+            const code = smallMatch[2];
+            return <CodeBlock key={index} code={code} lang={lang} isDarkMode={isDarkMode} />;
+          }
+          return <p key={index} className="whitespace-pre-wrap py-1">{part.replace(/```/g, '')}</p>;
         }
-        return <p key={index} className="whitespace-pre-wrap">{part}</p>;
+        return <p key={index} className="whitespace-pre-wrap py-1">{part}</p>;
       })}
     </div>
   );
@@ -358,7 +427,7 @@ export default function NeoticMain() {
                   {msg.role === 'assistant' && <div className={`w-9 h-9 rounded-xl ${theme.bgModule} border ${theme.borderMain} flex items-center justify-center shrink-0 shadow-sm`}><Bot className="w-5 h-5" /></div>}
                   <div className={`w-full overflow-hidden ${msg.role === 'user' ? `max-w-[85%] ${isDarkMode ? 'bg-purple-900/60' : 'bg-slate-900'} dark:bg-purple-700 text-white py-3.5 px-5 rounded-2xl shadow-lg ${theme.accentShadow}` : 'pt-2'}`}>
                     {msg.role === 'assistant' && msg.thoughts && msg.thoughts.length > 0 && <ReasoningChain thoughts={msg.thoughts} isGenerating={isGenerating && i === messages.length - 1} />}
-                    <MessageContent content={msg.content} isUser={msg.role === 'user'} theme={theme} />
+                    <MessageContent content={msg.content} isUser={msg.role === 'user'} theme={theme} isDarkMode={isDarkMode} />
                   </div>
                 </div>
               ))}
