@@ -5,6 +5,7 @@ import os
 import uuid
 from typing import Any, Dict, Optional
 
+# pylint: disable=import-error
 from fastapi import WebSocket
 from langchain.agents import create_agent
 from langchain_community.document_loaders import PyPDFLoader, TextLoader
@@ -28,7 +29,7 @@ class CoTAsyncHandler(AsyncCallbackHandler):
     Custom Async handler for Gemini models.
     Streams retrieval and thought steps via WebSocket.
     """
-    def __init__(self, websocket: WebSocket, parent_id: str = None):
+    def __init__(self, websocket: WebSocket, parent_id: Optional[str] = None):
         self.websocket = websocket
         self.parent_id = parent_id
 
@@ -40,10 +41,10 @@ class CoTAsyncHandler(AsyncCallbackHandler):
         return str(uuid.uuid4())
 
     async def on_tool_start(
-        self,
-        _serialized: Dict[str, Any],
-        input_str: str,
-        **_kwargs: Any
+            self,
+            _serialized: Dict[str, Any],
+            input_str: str,
+            **_kwargs: Any
     ) -> None:
         """
         Notify the client when a retrieval tool starts executing.

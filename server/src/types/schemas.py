@@ -3,6 +3,7 @@ Pydantic schemas for request and response data models.
 """
 
 from typing import List, Optional
+# pylint: disable=import-error
 from pydantic import BaseModel
 
 # pylint: disable=too-few-public-methods
