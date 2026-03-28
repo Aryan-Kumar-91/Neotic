@@ -40,7 +40,8 @@ export function useChatState() {
 
   // Mark hydration complete for client-only components
   useEffect(() => {
-    setIsLoaded(true);
+    const timer = setTimeout(() => setIsLoaded(true), 0);
+    return () => clearTimeout(timer);
   }, []);
 
   // Firestore Chat Sync
