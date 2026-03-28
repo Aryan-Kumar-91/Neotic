@@ -39,4 +39,8 @@ chroma_db/
 chroma_db_gemini/
 chroma_db_pro/
 
-certificates
+# Certificates and Keys
+server/*.pfx
+server/*.crt
+server/*.key
+server/*.pem
