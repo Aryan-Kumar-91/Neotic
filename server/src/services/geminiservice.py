@@ -6,6 +6,7 @@ import json
 import re
 from typing import List, Optional
 
+# pylint: disable=import-error
 import google.generativeai as google_genai
 
 from src.config.env import GOOGLE_API_KEY
@@ -23,7 +24,7 @@ try:
             if 'flash' in model_meta.name:
                 DEFAULT_MODEL_NAME = model_meta.name
                 break
-except Exception as list_error:
+except Exception as list_error: # pylint: disable=broad-except
     print(f"Warning: Could not list models ({list_error}), falling back to {DEFAULT_MODEL_NAME}")
 
 print(f"SUCCESS: Bound AI to model: {DEFAULT_MODEL_NAME}")
@@ -79,7 +80,7 @@ def generate_thoughts(prompt: str, files: Optional[List[FileData]] = None) -> di
                             f"({f_mime}, {len(f_bytes)} bytes) - cannot display content]"
                         )
                         print(f"⚠ Binary file (not readable): {f_data.name} ({f_mime})")
-            except Exception as file_err:
+            except Exception as file_err:  # pylint: disable=broad-except
                 print(f"⚠ Failed to process file {f_data.name}: {file_err}")
 
     print(f"→ Sending {len(content_parts)} part(s) to Gemini...")
@@ -99,5 +100,5 @@ def generate_thoughts(prompt: str, files: Optional[List[FileData]] = None) -> di
         if "thoughts" not in data or "final_answer" not in data:
             return {"thoughts": [], "final_answer": response.text}
         return data
-    except Exception:
+    except (json.JSONDecodeError, AttributeError, ValueError):
         return {"thoughts": [], "final_answer": response.text}
