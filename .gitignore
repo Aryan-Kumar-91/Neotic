@@ -1,0 +1,56 @@
+# Environments
+.env
+.env.local
+.env.*.local
+venv/
+env/
+.venv/
+
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+__pycache__/
+*.py[cod]
+
+# Next.js
+.next/
+out/
+build/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+*.suo
+*.orig
+
+# Python specifics
+*.so
+*.egg
+*.egg-info/
+dist/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Vector Databases
+chroma_db/
+chroma_db_gemini/
+chroma_db_pro/
+
+# Certificates and Keys
+certificates/
+server/*.pfx
+server/*.crt
+server/*.key
+server/*.pem
+.vercel
+.env.vercel*
+.firebase/
+firebase-debug.log
+firebase-debug.*.log
+deploy_output.txt
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
