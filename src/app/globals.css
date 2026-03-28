@@ -1,15 +1,20 @@
+/* csslint ignore:start */
 @import "tailwindcss";
+/* csslint ignore:end */
 
 /* Hide scrollbars globally */
 body {
   -ms-overflow-style: none; /* IE and Edge */
   scrollbar-width: none; /* Firefox */
+  background: var(--background);
+  color: var(--foreground);
 }
 
 ::-webkit-scrollbar {
   display: none; /* Chrome, Safari and Opera */
 }
 
+/* csslint ignore:start */
 html {
   scroll-behavior: smooth;
 }
@@ -17,6 +22,13 @@ html {
 :root {
   --background: #fff;
   --foreground: #171717;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
 }
 
 /* stylelint-disable at-rule-no-unknown */
@@ -28,18 +40,7 @@ html {
   --font-mono: var(--font-geist-mono);
 }
 /* stylelint-enable at-rule-no-unknown */
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-}
+/* csslint ignore:end */
 
 @keyframes twinkle {
   0%,

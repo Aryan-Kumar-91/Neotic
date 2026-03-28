@@ -19,14 +19,14 @@ REQUEST = urllib.request.Request(
 )
 
 try:
-    # pylint: disable=consider-using-with
-    # Bandit: URL audit for permitted schemes (already checked above).
-    with urllib.request.urlopen(REQUEST) as response:
+    # Bandit: URL audit for permitted schemes (already checked above B310).
+    with urllib.request.urlopen(REQUEST) as response: # nosec B310
         print("STATUS:", response.status)
         print("BODY:", response.read().decode())
 except urllib.error.HTTPError as http_error:
     print("HTTP ERROR:", http_error.code)
     print("ERROR BODY:", http_error.read().decode())
-except Exception as generic_error:
-    # pylint: disable=broad-except
+except urllib.error.URLError as url_error:
+    print("URL ERROR:", url_error.reason)
+except Exception as generic_error: # pylint: disable=broad-except
     print("Exception:", generic_error)
