@@ -21,7 +21,7 @@ Developed and presented at **HIRE-4-THON**, a National Level Hackathon organized
 - **Visualized Reasoning Graph:** Real-time rendering of AI's internal reasoning chain using `@xyflow/react` (React Flow) as an interactive DAG.
 - **Gemini-Flash Integration:** High-speed reasoning powered by Google's Gemini 2.0 Flash models with dynamic model negotiation.
 - **Progressive RAG Engine:** Built-in Retrieval-Augmented Generation (LangChain + ChromaDB) for querying local PDF/TXT knowledge bases.
-- **Multi-Tier Auth & Quota:** Secure session management via Supabase with an intelligent guest-quota system.
+- **Multi-Tier Auth & Quota:** Secure session management via Firebase with an intelligent guest-quota system.
 - **Glassmorphic UI:** High-fidelity interface with dynamic dark/light modes, animated particle backgrounds, and custom Markdown parsing.
 - **Enterprise MVC Architecture:** Monolith-free design with clear separation of `services`, `controllers`, and `middlewares`.
 
@@ -34,7 +34,7 @@ Developed and presented at **HIRE-4-THON**, a National Level Hackathon organized
 - **Framework:** Next.js 16 (React 19)
 - **Styling:** Tailwind CSS 4 + Lucide Icons
 - **Visualization:** React Flow (@xyflow/react)
-- **Authentication:** Supabase Auth (JWT)
+- **Authentication:** Firebase Auth & Firestore
 
 ### Backend
 
@@ -59,7 +59,7 @@ The Neotic engine orchestrates a low-latency pipeline between the user and the L
 
 - **Node.js** (v20 or newer)
 - **Python** (v3.10 or newer)
-- **Supabase Project** (for Auth & Storage)
+- **Firebase Project** (for Auth & Realtime Sync)
 - **Google AI Studio API Key** (Gemini)
 
 ### 1. Backend Setup
@@ -90,24 +90,15 @@ npm run dev
 
 ---
 
-## Environment Variables
+All environment variables have been consolidated into a master template to simplify onboarding!
 
-### Backend (`server/.env`)
+### Setup Instructions
 
-| Variable              | Description                                                      |
-| :-------------------- | :--------------------------------------------------------------- |
-| `GOOGLE_API_KEY`      | Your Google Gemini API Key                                       |
-| `SUPABASE_JWT_SECRET` | Secret key from Supabase project settings                        |
-| `DISABLE_AUTH`        | Set to `true` to bypass auth during local dev (`false` for prod) |
-| `CORS_ORIGINS`        | Permitted origins (e.g., `http://localhost:3000`)                |
-
-### Frontend (`.env.local`)
-
-| Variable                        | Description                                                   |
-| :------------------------------ | :------------------------------------------------------------ |
-| `NEXT_PUBLIC_API_URL`           | URL of the FastAPI gateway (default: `http://localhost:8001`) |
-| `NEXT_PUBLIC_SUPABASE_URL`      | Your Supabase project URL                                     |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Your Supabase anonymous key                                   |
+1. Locate the `.env.example` file in the main project folder.
+2. Duplicate this file twice:
+   - Rename one copy to `.env.local` and keep it in the root folder.
+   - Move the other copy into the `/server` folder and rename it exactly to `.env`
+3. Fill in your **Google AI Studio Key** and **Firebase Configuration Keys** inside both files.
 
 ---
 
