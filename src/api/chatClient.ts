@@ -14,9 +14,18 @@ export interface FileAttachment {
   data: string; // base64
 }
 
-interface Thought {
+export interface Thought {
   step: string;
   content: string;
+  confidence?: number;
+  duration_ms?: number;
+  is_reflection?: boolean;
+}
+
+export interface Citation {
+  claim: string;
+  source: string;
+  verification_status: "verified" | "unverified";
 }
 
 export async function sendPromptToAgent(
@@ -24,7 +33,7 @@ export async function sendPromptToAgent(
   abortController: AbortController,
   attachments?: File[],
   userPrefs?: { name: string; interests: string }
-): Promise<{ thoughts: Thought[]; final_answer: string }> {
+): Promise<{ thoughts: Thought[]; final_answer: string; citations: Citation[] }> {
   
   // Build attachment payloads
   const files: FileAttachment[] = [];
