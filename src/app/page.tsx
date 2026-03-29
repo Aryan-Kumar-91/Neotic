@@ -10,7 +10,8 @@ import {
   Send, Mic, Menu, History as HistoryIcon,
   Plus, Sun, Moon, Bot, LogOut, Settings,
   Info, SlidersHorizontal, Square, Trash2, ShieldCheck,
-  ShieldAlert, Smartphone, Clock, ChevronRight, Loader2
+  ShieldAlert, Smartphone, Clock, ChevronRight, Loader2,
+  Download, FileText, Library, Upload, X
 } from "lucide-react";
 import { 
   multiFactor, 
@@ -26,7 +27,7 @@ import { sendPromptToAgent } from "../api/chatClient";
 import { useChatState } from "../hooks/useChatState";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { atomDark, materialLight } from "react-syntax-highlighter/dist/esm/styles/prism";
-import { Check, Copy, Code, FileCode, Terminal, Globe } from "lucide-react";
+import { Check, Copy, Code, FileCode, Terminal, Globe, User, Volume2, VolumeX } from "lucide-react";
 
 interface ThemeProps {
   bgApp: string;
@@ -173,7 +174,18 @@ export default function NeoticMain() {
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [settingsTab, setSettingsTab] = useState<"instructions" | "bin" | "security" | "about">("instructions");
+  const [settingsTab, setSettingsTab] = useState<"instructions" | "bin" | "security" | "about" | "profile" | "library">("instructions");
+  const [userName, setUserName] = useState("");
+  const [userInterests, setUserInterests] = useState("");
+  const [prefsSaved, setPrefsSaved] = useState(false);
+  
+  const [libraryFiles, setLibraryFiles] = useState<string[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  
+  const [isRecording, setIsRecording] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [autoSpeak, setAutoSpeak] = useState(false);
+  const recognitionRef = useRef<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
   
   // MFA Enrollment State
   const [mfaEnabled, setMfaEnabled] = useState(false);
@@ -283,9 +295,102 @@ export default function NeoticMain() {
       if (t === "dark") setIsDarkMode(true);
       const gc = localStorage.getItem("neotic_guest_prompts");
       if (gc) setGuestPromptCount(parseInt(gc, 10));
+      
+      const prefsMatch = document.cookie.match(/(?:^|; )user_prefs=([^;]*)/);
+      if (prefsMatch) {
+        const prefs = JSON.parse(decodeURIComponent(prefsMatch[1]));
+        if (prefs.name) setUserName(prefs.name);
+        if (prefs.interests) setUserInterests(prefs.interests);
+      }
     } catch {}
     setIsLoaded(true);
   }, [setIsLoaded]);
+
+  const saveUserPrefs = () => {
+    const prefs = { name: userName, interests: userInterests };
+    document.cookie = `user_prefs=${encodeURIComponent(JSON.stringify(prefs))}; path=/; max-age=31536000`; // 1 year expiry
+    setPrefsSaved(true);
+    setTimeout(() => setPrefsSaved(false), 2000);
+  };
+
+  const fetchLibrary = async () => {
+    try {
+      const res = await fetch("/api/library/list");
+      const data = await res.json();
+      if (data.files) setLibraryFiles(data.files);
+    } catch (err) { console.error("Failed to fetch library", err); }
+  };
+
+  const deleteFromLibrary = async (name: string) => {
+    try {
+      await fetch(`/api/library/delete/${name}`, { method: "DELETE" });
+      fetchLibrary();
+    } catch (err) { console.error("Failed to delete", err); }
+  };
+
+  const uploadToLibrary = async (file: File) => {
+    setIsUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+    try {
+      await fetch("/api/library/upload", { method: "POST", body: formData });
+      fetchLibrary();
+    } catch (err) { console.error("Upload failed", err); }
+    finally { setIsUploading(false); }
+  };
+
+  useEffect(() => {
+    if (settingsOpen && settingsTab === "library") {
+      fetchLibrary();
+    }
+  }, [settingsOpen, settingsTab]);
+
+  // Premium Voice: STT (Speech Recognition)
+  useEffect(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition; // eslint-disable-line @typescript-eslint/no-explicit-any
+    if (SpeechRecognition) {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = "en-US";
+
+      recognition.onresult = (event: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+        const transcript = event.results[0][0].transcript;
+        setInput(prev => prev + (prev ? " " : "") + transcript);
+        setIsRecording(false);
+      };
+
+      recognition.onerror = () => setIsRecording(false);
+      recognition.onend = () => setIsRecording(false);
+      recognitionRef.current = recognition;
+    }
+  }, []);
+
+  const toggleRecording = () => {
+    if (isRecording) {
+      recognitionRef.current?.stop();
+      setIsRecording(false);
+    } else {
+      try {
+        recognitionRef.current?.start();
+        setIsRecording(true);
+      } catch { setIsRecording(false); }
+    }
+  };
+
+  // Premium Voice: TTS (Text-to-Speech)
+  const speakText = useCallback((text: string) => {
+    if (isSpeaking) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+      return;
+    }
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+    window.speechSynthesis.speak(utterance);
+  }, [isSpeaking]);
 
   useEffect(() => {
     if (isLoaded) localStorage.setItem("neotic_theme", isDarkMode ? "dark" : "light");
@@ -395,7 +500,8 @@ export default function NeoticMain() {
     setIsGenerating(true);
 
     try {
-      const data = await sendPromptToAgent(text, controller);
+      const userPrefs = { name: userName, interests: userInterests };
+      const data = await sendPromptToAgent(text, controller, undefined, userPrefs);
       const responseMessage: Message = { role: "assistant", content: data.final_answer, thoughts: data.thoughts };
       const updatedMessages = [...newMessages, responseMessage];
       setMessages(updatedMessages);
@@ -425,17 +531,50 @@ export default function NeoticMain() {
           setChatHistory(prev => [newChat, ...prev]);
         }
       }
+
+      if (autoSpeak) {
+        speakText(data.final_answer);
+      }
     } catch (err) {
       if (err instanceof Error && err.name === "AbortError") return;
       setMessages([...newMessages, { role: "assistant", content: "The Neotic core failed to respond." }]);
     } finally {
       setIsGenerating(false);
     }
-  }, [messages, isGenerating, saveChatEnabled, currentChatId, userEmail, guestPromptCount, setChatHistory, updateChatInDb]);
+  }, [messages, isGenerating, saveChatEnabled, currentChatId, userEmail, guestPromptCount, setChatHistory, updateChatInDb, userName, userInterests, autoSpeak, speakText]);
 
   const handleStop = () => {
     abortControllerRef.current?.abort();
     setIsGenerating(false);
+  };
+
+  const downloadChat = () => {
+    if (messages.length === 0) return;
+    
+    let markdown = `# Neotic Chat Session\n*Date: ${new Date().toLocaleString()}*\n\n---\n\n`;
+    
+    messages.forEach((msg) => {
+      const role = msg.role === "user" ? "USER" : "NEOTIC";
+      markdown += `### ${role}\n${msg.content}\n\n`;
+      if (msg.thoughts && msg.thoughts.length > 0) {
+        markdown += `> **Reasoning Chain:**\n`;
+        msg.thoughts.forEach(t => {
+          markdown += `> - **${t.step}**: ${t.content}\n`;
+        });
+        markdown += `\n`;
+      }
+      markdown += `---\n\n`;
+    });
+    
+    const blob = new Blob([markdown], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `neotic-session-${Date.now()}.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -452,6 +591,8 @@ export default function NeoticMain() {
                 <div className="fixed inset-0 z-30" onClick={() => setDropdownOpen(false)} />
                 <div className={`absolute right-0 mt-2 w-56 rounded-xl border ${theme.borderMain} ${theme.bgModule} shadow-xl z-40 py-1.5 animate-in fade-in zoom-in duration-200`}>
                   {[
+                    { id: "profile" as const, label: "Profile & Interests", icon: <User className="w-4 h-4" /> },
+                    { id: "library" as const, label: "Research Library", icon: <Library className="w-4 h-4" /> },
                     { id: "instructions" as const, label: "Instructions", icon: <SlidersHorizontal className="w-4 h-4" /> },
                     { id: "security" as const, label: "Security", icon: <ShieldCheck className="w-4 h-4" /> },
                     { id: "bin" as const, label: "Recycle Bin", icon: <Trash2 className="w-4 h-4" /> },
@@ -504,6 +645,23 @@ export default function NeoticMain() {
             </button>
           </div>
           <div className="flex items-center gap-3">
+            <button 
+                onClick={() => setAutoSpeak(!autoSpeak)} 
+                className={`p-2 rounded-lg transition-colors ${autoSpeak ? 'bg-purple-500/10 text-purple-500' : `${theme.textSecondary} ${theme.hoverBg}`}`}
+                title="Toggle Auto-Read AI Responses"
+              >
+                {autoSpeak ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+            </button>
+            {messages.length > 0 && (
+              <button 
+                onClick={downloadChat} 
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition-all ${isDarkMode ? 'bg-purple-500/10 text-purple-500 hover:bg-purple-500/20' : 'bg-blue-500/10 text-blue-500 hover:bg-blue-500/20'}`}
+                title="Export Chat as Markdown"
+              >
+                <Download className="w-4 h-4" />
+                <span className="hidden sm:inline">Export</span>
+              </button>
+            )}
             <button onClick={() => setIsDarkMode(!isDarkMode)} className={`p-2 rounded-lg ${theme.textSecondary} ${theme.hoverBg}`}>{isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}</button>
             {userEmail ? (
               <>
@@ -533,9 +691,14 @@ export default function NeoticMain() {
           ) : (
             <div className="space-y-8">
               {messages.map((msg, i) => (
-                <div key={i} className={`flex gap-5 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  {msg.role === 'assistant' && <div className={`w-9 h-9 rounded-xl ${theme.bgModule} border ${theme.borderMain} flex items-center justify-center shrink-0 shadow-sm`}><Bot className="w-5 h-5" /></div>}
-                  <div className={`w-full overflow-hidden ${msg.role === 'user' ? `max-w-[85%] ${isDarkMode ? 'bg-purple-900/60' : 'bg-slate-900'} dark:bg-purple-700 text-white py-3.5 px-5 rounded-2xl shadow-lg ${theme.accentShadow}` : 'pt-2'}`}>
+                <div key={i} className={`flex gap-5 ${msg.role === 'user' ? 'justify-end' : 'justify-start'} group`}>
+                  {msg.role === 'assistant' && <div className="flex flex-col gap-2 shrink-0">
+                    <div className={`w-9 h-9 rounded-xl ${theme.bgModule} border ${theme.borderMain} flex items-center justify-center shadow-sm`}><Bot className="w-5 h-5" /></div>
+                    <button onClick={() => speakText(msg.content)} className={`w-9 h-9 rounded-xl ${theme.bgModule} border ${theme.borderMain} flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-opacity hover:text-purple-500`} title="Read aloud">
+                      <Volume2 className="w-4 h-4" />
+                    </button>
+                  </div>}
+                  <div className={`w-full overflow-hidden group ${msg.role === 'user' ? `max-w-[85%] ${isDarkMode ? 'bg-purple-900/60' : 'bg-slate-900'} dark:bg-purple-700 text-white py-3.5 px-5 rounded-2xl shadow-lg ${theme.accentShadow}` : 'pt-2'}`}>
                     {msg.role === 'assistant' && msg.thoughts && msg.thoughts.length > 0 && <ReasoningChain thoughts={msg.thoughts} isGenerating={isGenerating && i === messages.length - 1} />}
                     <MessageContent content={msg.content} isUser={msg.role === 'user'} theme={theme} isDarkMode={isDarkMode} />
                   </div>
@@ -551,7 +714,16 @@ export default function NeoticMain() {
               <div className={`${theme.bgInput} rounded-2xl flex flex-col p-2 border ${theme.borderMain} ${theme.borderFocus} shadow-2xl`}>
                  <div className="px-3 pt-3"><textarea ref={textareaRef} value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitPrompt(input); } }} disabled={isGenerating} placeholder={animatedPlaceholder || "Ask Neotic..."} className={`w-full bg-transparent outline-none resize-none text-[16px] ${theme.textPrimary}`} rows={1} /></div>
                  <div className="flex justify-between items-center px-2 pb-1 mt-2">
-                    <div className="flex gap-1"><button className="p-2.5 text-slate-500"><Plus className="w-4 h-4" /></button><button className="p-2.5 text-slate-500"><Mic className="w-4 h-4" /></button></div>
+                    <div className="flex gap-1">
+                        <button className="p-2.5 text-slate-500"><Plus className="w-4 h-4" /></button>
+                        <button 
+                          onClick={toggleRecording} 
+                          className={`p-2.5 transition-all rounded-lg ${isRecording ? 'bg-red-500/10 text-red-500 animate-pulse' : 'text-slate-500 hover:bg-slate-500/10'}`}
+                          title="Speak to Neotic"
+                        >
+                          <Mic className="w-4 h-4" />
+                        </button>
+                    </div>
                     {isGenerating ? <button onClick={handleStop} className="p-2.5 bg-red-500/10 text-red-500 rounded-xl"><Square className="w-4 h-4 fill-current" /></button> : <button onClick={() => submitPrompt(input)} disabled={!input.trim()} className={`p-2.5 rounded-xl transition-all ${input.trim() ? `${theme.accentBg} text-white` : 'text-slate-400'}`}><Send className="w-4 h-4" /></button>}
                  </div>
               </div>
@@ -578,19 +750,69 @@ export default function NeoticMain() {
               
               <div className="flex items-center gap-4 mb-6">
                 <div className={`p-2 rounded-lg ${isDarkMode ? 'bg-purple-500/10 text-purple-500' : 'bg-blue-500/10 text-blue-500'}`}>
-                  {settingsTab === "instructions" ? <SlidersHorizontal className="w-5 h-5" /> : 
+                  {settingsTab === "profile" ? <User className="w-5 h-5" /> :
+                   settingsTab === "library" ? <Library className="w-5 h-5" /> :
+                   settingsTab === "instructions" ? <SlidersHorizontal className="w-5 h-5" /> : 
                    settingsTab === "security" ? <ShieldCheck className="w-5 h-5" /> :
                    settingsTab === "bin" ? <Trash2 className="w-5 h-5" /> : <Info className="w-5 h-5" />}
                 </div>
                 <h2 className="font-bold text-xl uppercase tracking-tight">
-                  {settingsTab === "instructions" ? "Custom Instructions" : 
+                  {settingsTab === "profile" ? "Profile & Interests" :
+                   settingsTab === "library" ? "Research Library" :
+                   settingsTab === "instructions" ? "Custom Instructions" : 
                    settingsTab === "security" ? "Security Settings" :
                    settingsTab === "bin" ? "Recycle Bin" : "About Neotic"}
                 </h2>
               </div>
 
               <div className="min-h-[300px]">
-                {settingsTab === "security" ? (
+                {settingsTab === "library" ? (
+                  <div className="space-y-6">
+                    <p className={`text-sm ${theme.textSecondary}`}>Manage verified PDF and TXT sources for the Reasoning Core.</p>
+                    <div className="flex gap-2">
+                       <label className={`flex-1 flex items-center justify-center gap-2 border-2 border-dashed ${theme.borderMain} hover:border-purple-500/50 rounded-2xl py-8 cursor-pointer transition-colors group ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                          {isUploading ? <Loader2 className="w-5 h-5 animate-spin text-purple-500" /> : <Upload className="w-5 h-5 text-slate-400 group-hover:text-purple-500" />}
+                          <span className="text-sm font-medium">{isUploading ? "Uploading..." : "Click to upload doc"}</span>
+                          <input type="file" className="hidden" accept=".pdf,.txt" disabled={isUploading} onChange={(e) => {
+                            if (e.target.files && e.target.files[0]) uploadToLibrary(e.target.files[0]);
+                          }} />
+                       </label>
+                    </div>
+
+                    <div className="space-y-2 max-h-48 overflow-y-auto custom-scrollbar pr-2">
+                        {libraryFiles.length === 0 ? (
+                          <div className="text-center py-8 opacity-40 italic text-sm">No documents in library</div>
+                        ) : (
+                          libraryFiles.map((file) => (
+                            <div key={file} className={`flex items-center justify-between p-3 rounded-xl ${theme.bgSidebar} border ${theme.borderMain}`}>
+                              <div className="flex items-center gap-3">
+                                 <FileText className="w-4 h-4 text-purple-500" />
+                                 <span className="text-sm truncate max-w-[200px]">{file}</span>
+                              </div>
+                              <button onClick={() => deleteFromLibrary(file)} className="p-1.5 hover:bg-red-500/10 text-red-500 rounded-lg transition-colors"><X className="w-4 h-4" /></button>
+                            </div>
+                          ))
+                        )}
+                    </div>
+                  </div>
+                ) : settingsTab === "profile" ? (
+                  <div className="space-y-5">
+                    <p className={`text-sm ${theme.textSecondary}`}>Personalize your Neotic experience. The core will use these details to tailor its responses.</p>
+                    <div className="space-y-3">
+                      <div>
+                        <label className={`block text-xs font-bold mb-1.5 ${theme.textSecondary} uppercase tracking-wider`}>Your Name (Optional)</label>
+                        <input type="text" value={userName} onChange={(e) => setUserName(e.target.value)} placeholder="e.g. John Doe" className={`w-full p-3 rounded-xl border ${theme.borderMain} ${theme.bgSidebar} outline-none ${theme.borderFocus} text-sm`} />
+                      </div>
+                      <div>
+                        <label className={`block text-xs font-bold mb-1.5 ${theme.textSecondary} uppercase tracking-wider`}>Interests & Background</label>
+                        <textarea rows={4} value={userInterests} onChange={(e) => setUserInterests(e.target.value)} placeholder="e.g. I am a software engineer interested in quantum computing and Python. Please explain things using technical analogies." className={`w-full p-3 rounded-xl border ${theme.borderMain} ${theme.bgSidebar} outline-none ${theme.borderFocus} text-sm resize-none`} />
+                      </div>
+                    </div>
+                    <button onClick={saveUserPrefs} className={`w-full py-3 rounded-xl ${theme.accentBg} text-white font-bold text-sm shadow-lg ${theme.accentShadow} transition-all active:scale-[0.98] flex items-center justify-center gap-2`}>
+                      {prefsSaved ? <><Check className="w-4 h-4" /> Saved</> : "Save Preferences"}
+                    </button>
+                  </div>
+                ) : settingsTab === "security" ? (
                   <div className="space-y-6">
                     <div className={`p-4 rounded-2xl border ${theme.borderMain} ${mfaEnabled ? 'bg-emerald-500/5 border-emerald-500/20' : ''}`}>
                       <div className="flex items-center justify-between mb-4">
