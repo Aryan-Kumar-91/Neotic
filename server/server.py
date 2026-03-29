@@ -7,6 +7,7 @@ import uvicorn
 from fastapi import FastAPI, WebSocket
 from src.middlewares.cors import setup_cors
 from src.routes.chatroutes import ROUTER as chat_router
+from src.routes.libraryroutes import ROUTER as library_router
 from src.rag.websocket import handle_rag_websocket
 
 APP = FastAPI(title="Neotic Backend Core")
@@ -16,6 +17,7 @@ setup_cors(APP)
 
 # Mount Routes
 APP.include_router(chat_router, prefix="/api")
+APP.include_router(library_router, prefix="/api/library")
 
 # Handle RAG WebSockets (Consolidated from rag-visualizer)
 @APP.websocket("/ws/rag")

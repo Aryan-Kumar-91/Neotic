@@ -11,6 +11,7 @@ import google.generativeai as google_genai
 
 from src.config.env import GOOGLE_API_KEY
 from src.types.schemas import FileData
+from src.rag.service import get_rag_context
 
 google_genai.configure(api_key=GOOGLE_API_KEY)
 
@@ -28,9 +29,13 @@ except Exception as list_error: # pylint: disable=broad-except
     print(f"Warning: Could not list models ({list_error}), falling back to {DEFAULT_MODEL_NAME}")
 
 print(f"SUCCESS: Bound AI to model: {DEFAULT_MODEL_NAME}")
-AI_MODEL = google_genai.GenerativeModel(DEFAULT_MODEL_NAME)
+# Enable Gemini's built-in Google Search capability
+AI_MODEL = google_genai.GenerativeModel(
+    model_name=DEFAULT_MODEL_NAME,
+    tools=[{"google_search_retrieval": {}}]
+)
 
-def generate_thoughts(prompt: str, files: Optional[List[FileData]] = None) -> dict:
+def generate_thoughts(prompt: str, files: Optional[List[FileData]] = None, user_prefs: Optional[dict] = None) -> dict:
     """
     Generate structured Chain-of-Thought reasoning using the Gemini API.
     """
@@ -39,6 +44,17 @@ def generate_thoughts(prompt: str, files: Optional[List[FileData]] = None) -> di
         '{"thoughts": [{"step": "Analysis", "content": "..."}], "final_answer": "..."}'
     )
 
+    if user_prefs:
+        name = user_prefs.get('name', '')
+        interests = user_prefs.get('interests', '')
+        if name or interests:
+            system_instr += "\n\nUser Context:"
+            if name:
+                system_instr += f"\n- Name: {name}"
+            if interests:
+                system_instr += f"\n- Interests: {interests}"
+            system_instr += "\nTailor your responses, tone, and examples to the user's name and interests where helpful."
+
     if files:
         has_images = any(f.mime_type.startswith("image/") for f in files)
         if has_images:
@@ -46,6 +62,17 @@ def generate_thoughts(prompt: str, files: Optional[List[FileData]] = None) -> di
                 '\nThe user has attached image(s). You MUST analyze and '
                 'describe the image content in your reasoning steps.'
             )
+
+    # Optional RAG Enrichment
+    rag_data = get_rag_context(prompt)
+    library_sources = []
+    if rag_data:
+        print(f"🔍 Searching local library for: {prompt[:50]}...")
+        rag_context = rag_data["context"]
+        library_sources = rag_data["sources"]
+        if rag_context:
+            system_instr += f"\n\nLocal Knowledge Base Context (VERIFIED):\n{rag_context}"
+            print(f"✓ Found RAG context from {len(library_sources)} sources")
 
     full_prompt = f"{system_instr}\n\nUser Question: {prompt}"
 
@@ -96,9 +123,17 @@ def generate_thoughts(prompt: str, files: Optional[List[FileData]] = None) -> di
 
     try:
         data = json.loads(match.group(0))
-        # Ensure it has the correct structure
         if "thoughts" not in data or "final_answer" not in data:
             return {"thoughts": [], "final_answer": response.text}
+        
+        # Inject RAG info into the thoughts if it was used
+        if library_sources:
+            retrieval_thought = {
+                "step": "Library Retrieval",
+                "content": f"Verified information was retrieved from the following documents: {', '.join(library_sources)}."
+            }
+            data["thoughts"] = [retrieval_thought] + data["thoughts"]
+            
         return data
     except (json.JSONDecodeError, AttributeError, ValueError):
         return {"thoughts": [], "final_answer": response.text}
