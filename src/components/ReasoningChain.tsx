@@ -24,6 +24,8 @@ const STAGE_PALETTE = [
 const SPECIAL_STAGES: Record<string, any> = { // eslint-disable-line @typescript-eslint/no-explicit-any
   'Library Retrieval': { name: 'Library Retrieval', icon: Library, bg: 'bg-emerald-500/25', border: 'border-emerald-500/40', text: 'text-emerald-300', dot: 'bg-emerald-500' },
   'Investigation': { name: 'Investigation', icon: ScanSearch, bg: 'bg-violet-400/25', border: 'border-violet-400/40', text: 'text-violet-300', dot: 'bg-violet-400' },
+  'Reflection': { name: 'Reflection', icon: Sparkles, bg: 'bg-rose-500/25', border: 'border-rose-500/40', text: 'text-rose-300', dot: 'bg-rose-500' },
+  'Branching': { name: 'Pivoting', icon: Waypoints, bg: 'bg-amber-500/25', border: 'border-amber-500/40', text: 'text-amber-300', dot: 'bg-amber-500' },
 };
 
 function getStage(index: number, stepName?: string) {
@@ -74,16 +76,23 @@ function CustomNode({ data }: { data: any }) { // eslint-disable-line @typescrip
       <Handle type="source" position={Position.Right} className="opacity-0 w-0 h-0" />
 
       {/* Label */}
-      <span
-        className={`text-[10px] font-semibold tracking-wider uppercase px-2.5 py-1 rounded-md whitespace-nowrap
-          transition-all duration-500
-          ${isActive
-            ? `${data.textColor || 'text-blue-300'} bg-white/5 border border-white/10`
-            : 'text-[#777] bg-transparent border border-transparent'
-          }`}
-      >
-        {data.stageName}
-      </span>
+      <div className="flex flex-col items-center gap-1.5">
+        <span
+          className={`text-[10px] font-semibold tracking-wider uppercase px-2.5 py-1 rounded-md whitespace-nowrap
+            transition-all duration-500
+            ${isActive
+              ? `${data.textColor || 'text-blue-300'} bg-white/5 border border-white/10`
+              : 'text-[#777] bg-transparent border border-transparent'
+            }`}
+        >
+          {data.stageName}
+        </span>
+        {data.duration && (
+            <span className="text-[9px] text-[#555] font-mono tracking-tighter tabular-nums bg-white/5 px-1.5 rounded opacity-80">
+                {data.duration}ms
+            </span>
+        )}
+      </div>
     </div>
   );
 }
@@ -97,9 +106,19 @@ interface SelectedInfo {
   content: string;
 }
 
+const confRating = (c: number) => {
+    if (c >= 0.9) return { label: 'Extremely High', style: 'border-emerald-500/30 text-emerald-400 bg-emerald-500/10' };
+    if (c >= 0.75) return { label: 'High', style: 'border-blue-500/30 text-blue-400 bg-blue-500/10' };
+    if (c >= 0.5) return { label: 'Medium', style: 'border-amber-500/30 text-amber-400 bg-amber-500/10' };
+    return { label: 'Low', style: 'border-rose-500/30 text-rose-400 bg-rose-500/10' };
+};
+
 interface Thought {
   step: string;
   content: string;
+  confidence?: number;
+  duration_ms?: number;
+  is_reflection?: boolean;
 }
 
 // ─── Main Component ──────────────────────────────────────────────────────────
@@ -144,10 +163,19 @@ export default function ReasoningChain({ thoughts, isGenerating }: { thoughts: T
 
       const progress = (index + 1) / (thoughts.length + 1);
       const x = startX + progress * (endX - startX);
-      const yOffset = (index % 2 === 0 ? -1 : 1) * (40 + (index % 3) * 10);
-      const y = centerY + yOffset;
+      
+      // Reflection nodes branch out vertically
+      const verticalOffset = thought.is_reflection ? (index % 2 === 0 ? -120 : 120) : (index % 2 === 0 ? -40 : 40);
+      const y = centerY + verticalOffset;
 
       const isActive = isGenerating && index === thoughts.length - 1;
+      
+      // Confidence-based coloring
+      const conf = thought.confidence ?? 0.8;
+      let confColor = 'border-white/20';
+      if (conf >= 0.9) confColor = 'border-emerald-400/60';
+      else if (conf < 0.6) confColor = 'border-rose-400/60';
+      else confColor = 'border-amber-400/60';
 
       newNodes.push({
         id,
@@ -155,23 +183,31 @@ export default function ReasoningChain({ thoughts, isGenerating }: { thoughts: T
         position: { x, y },
         data: {
           stageName: stage.name, icon: stage.icon,
-          bgClass: stage.bg, borderColor: stage.border,
-          ringColor: `ring-${stage.dot.replace('bg-', '')}`,
+          bgClass: stage.bg, 
+          borderColor: confColor,
+          ringColor: isActive ? `ring-${stage.dot.replace('bg-', '')}` : 'ring-white/10',
           textColor: stage.text,
           content: thought.content, isActive,
           nodeIndex: index + 1, showIcons,
+          duration: thought.duration_ms,
+          confidence: thought.confidence,
           onNodeClick: handleNodeClick,
         }
       });
 
-      const edgeColor = isActive ? '#60A5FA' : '#2A2A2C';
+      const edgeColor = isActive ? '#60A5FA' : (thought.is_reflection ? '#F43F5E' : '#2A2A2C');
       newEdges.push({
         id: `e-${prevId}-${id}`,
         source: prevId,
         target: id,
-        type: 'straight',
-        animated: isActive,
-        style: { stroke: edgeColor, strokeWidth: isActive ? 2 : 1.5, transition: 'stroke 0.6s ease, stroke-width 0.6s ease' },
+        type: thought.is_reflection ? 'step' : 'straight',
+        animated: isActive || thought.is_reflection,
+        style: { 
+            stroke: edgeColor, 
+            strokeWidth: (isActive || thought.is_reflection) ? 2 : 1.5, 
+            transition: 'stroke 0.6s ease, stroke-width 0.6s ease',
+            strokeDasharray: thought.is_reflection ? '5 5' : 'none'
+        },
         markerEnd: { type: MarkerType.ArrowClosed, color: edgeColor, width: 14, height: 14 }
       });
 
@@ -273,7 +309,20 @@ export default function ReasoningChain({ thoughts, isGenerating }: { thoughts: T
             </div>
             <div className="flex flex-col gap-1 overflow-hidden flex-1">
               <div className="flex items-center justify-between">
-                <h3 className="text-white/90 font-semibold text-sm">{selected.label}</h3>
+                <div className="flex items-center gap-2">
+                    <h3 className="text-white/90 font-semibold text-sm">{selected.label}</h3>
+                    {(() => {
+                      const node = nodes.find(n => n.id === `thought-${selected.index - 1}`);
+                      const confidence = (node?.data as any)?.confidence; // eslint-disable-line @typescript-eslint/no-explicit-any
+                      if (!confidence) return null;
+                      const rating = confRating(confidence);
+                      return (
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded border ${rating.style}`}>
+                          {Math.round(confidence * 100)}% Confidence
+                        </span>
+                      );
+                    })()}
+                </div>
                 <button
                   onClick={() => setSelected(null)}
                   className="text-[#555] hover:text-white/70 transition-colors p-0.5 rounded hover:bg-white/5"
