@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { auth, db, googleProvider, githubProvider } from "@/lib/firebase";
 import {
   signInWithEmailAndPassword,
@@ -87,7 +88,12 @@ export default function LoginPage() {
     setShowMfa(false);
   };
 
+  // Auth Handlers
   const handleGoogleSignIn = async () => {
+    if (process.env.NEXT_PUBLIC_DISABLE_AUTH === "true") {
+      setError("Firebase Auth is bypassed. Please go to the homepage and use Neotic instantly as a Guest. No account needed!");
+      return;
+    }
     setError(null);
     setLoading(true);
     try {
@@ -101,6 +107,10 @@ export default function LoginPage() {
   };
 
   const handleGithubSignIn = async () => {
+    if (process.env.NEXT_PUBLIC_DISABLE_AUTH === "true") {
+      setError("Firebase Auth is bypassed. Please go to the homepage and use Neotic instantly as a Guest. No account needed!");
+      return;
+    }
     setError(null);
     setLoading(true);
     try {
@@ -132,6 +142,10 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (process.env.NEXT_PUBLIC_DISABLE_AUTH === "true") {
+      setError("Firebase Auth is bypassed for local sessions. Please go to the homepage and use Neotic instantly as a Guest. No account needed!");
+      return;
+    }
     setError(null);
     setLoading(true);
 
@@ -198,10 +212,12 @@ export default function LoginPage() {
           
           {/* Logo & Header */}
           <div className="flex flex-col items-center mb-8">
-            <div className="w-12 h-12 rounded-xl bg-linear-to-br from-blue-500 to-indigo-600 flex items-center justify-center mb-4 shadow-lg shadow-blue-500/25">
-              <Brain className="w-6 h-6 text-white" />
-            </div>
-            <h1 className={`text-2xl font-semibold tracking-tight ${theme.textPrimary}`}>Neotic</h1>
+            <Link href="/" className="flex flex-col items-center group hover:opacity-80 transition-opacity">
+              <div className="w-12 h-12 rounded-xl bg-linear-to-br from-blue-500 to-indigo-600 flex items-center justify-center mb-4 shadow-lg shadow-blue-500/25 group-hover:scale-105 transition-transform">
+                <Brain className="w-6 h-6 text-white" />
+              </div>
+              <h1 className={`text-2xl font-semibold tracking-tight ${theme.textPrimary}`}>Neotic</h1>
+            </Link>
             <p className={`text-sm mt-1 ${theme.textSecondary}`}>
               {showMfa ? "Two-Factor Authentication" : mode === "signin" ? "Sign in to continue reasoning" : "Create your account"}
             </p>

@@ -373,7 +373,7 @@ export default function NeoticMain() {
   const submitPrompt = useCallback(async (text: string) => {
     if (!text.trim() || isGenerating) return;
 
-    if (!userEmail) {
+    if (!userEmail && process.env.NEXT_PUBLIC_DISABLE_AUTH !== "true") {
       if (guestPromptCount >= 3) {
         setShowGuestModal(true);
         return;
@@ -487,8 +487,8 @@ export default function NeoticMain() {
            ) : (
              <div className={`p-5 rounded-2xl border border-dashed ${theme.borderMain} text-center space-y-4`}>
                 <HistoryIcon className="w-5 h-5 mx-auto opacity-30" />
-                <p className="text-xs font-medium">Log in to save history.</p>
-                <Link href="/login" className={`block w-full py-2 ${theme.accentBg} text-white rounded-lg text-xs font-bold`}>Log In</Link>
+                <p className="text-xs font-medium">Sign in to save history.</p>
+                <Link href="/login" className={`block w-full py-2 ${theme.accentBg} text-white rounded-lg text-xs font-bold`}>Sign In</Link>
              </div>
            )}
         </div>
@@ -498,15 +498,23 @@ export default function NeoticMain() {
         <header className={`px-6 py-4 flex items-center justify-between sticky top-0 ${theme.bgApp}/80 backdrop-blur-xl border-b ${theme.borderMain} z-10 w-full`}>
           <div className="flex items-center gap-4">
             {!sidebarOpen && <button onClick={() => setSidebarOpen(true)} className={`p-2 rounded-lg ${theme.hoverBg}`}><Menu className="w-5 h-5" /></button>}
-            <div className="flex items-center gap-2">
+            <button onClick={handleNewChat} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
               <Image src={isDarkMode ? "/neotic-minimalist-logo-darkmode-v2.png" : "/neotic-minimalist-logo-lightmode-v2.png"} alt="Neotic Logo" width={32} height={32} priority className="rounded-lg shadow-lg w-8 h-auto" />
               <span className={`text-lg font-bold bg-clip-text text-transparent bg-linear-to-r ${theme.accentGradient}`}>Neotic</span>
-            </div>
+            </button>
           </div>
           <div className="flex items-center gap-3">
             <button onClick={() => setIsDarkMode(!isDarkMode)} className={`p-2 rounded-lg ${theme.textSecondary} ${theme.hoverBg}`}>{isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}</button>
-            {userEmail && <div className={`w-8 h-8 rounded-lg bg-linear-to-br ${theme.accentGradient} flex items-center justify-center text-xs font-bold text-white uppercase ${theme.accentShadow}`}>{userEmail[0]}</div>}
-            <button onClick={handleLogout} className={`p-2 rounded-lg ${theme.textMuted} ${theme.hoverBg} hover:text-red-500`}><LogOut className="w-4 h-4" /></button>
+            {userEmail ? (
+              <>
+                <div className={`w-8 h-8 rounded-lg bg-linear-to-br ${theme.accentGradient} flex items-center justify-center text-xs font-bold text-white uppercase ${theme.accentShadow}`}>{userEmail[0]}</div>
+                <button onClick={handleLogout} className={`p-2 rounded-lg ${theme.textMuted} ${theme.hoverBg} hover:text-red-500`}><LogOut className="w-4 h-4" /></button>
+              </>
+            ) : (
+              <Link href="/login" className={`px-4 py-2 rounded-lg text-xs font-bold ${theme.accentBg} text-white shadow-md hover:opacity-90 transition-opacity`}>
+                Sign In
+              </Link>
+            )}
           </div>
         </header>
 
@@ -556,8 +564,8 @@ export default function NeoticMain() {
            <div className="absolute inset-0 bg-black/60" onClick={() => setShowGuestModal(false)} />
            <div className={`relative w-full max-w-sm ${theme.bgModule} rounded-3xl p-8 z-50 shadow-2xl`}>
               <h2 className="text-2xl font-bold mb-4">Reasoning Limit</h2>
-              <p className="mb-6 opacity-70">You&apos;ve reached your guest limit. Log in to keep exploring.</p>
-              <Link href="/login" className={`block w-full py-3 ${theme.accentBg} text-white rounded-xl font-bold text-center`}>Log In</Link>
+              <p className="mb-6 opacity-70">You&apos;ve reached your guest limit. Sign in to keep exploring.</p>
+              <Link href="/login" className={`block w-full py-3 ${theme.accentBg} text-white rounded-xl font-bold text-center`}>Sign In</Link>
            </div>
         </div>
       )}
