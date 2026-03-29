@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { ReactFlow, Background, MarkerType, Node, Edge, Handle, Position } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import {
   HelpCircle, CheckCircle, Filter, BrainCircuit, Eye, Calculator,
-  Image as ImageIcon, X, Sparkles, Lightbulb, ScanSearch, Layers, Waypoints
+  Image as ImageIcon, X, Sparkles, Lightbulb, ScanSearch, Layers, Waypoints, Library
 } from 'lucide-react';
 
 // ─── Stage Naming & Color Palette ────────────────────────────────────────────
@@ -21,12 +21,18 @@ const STAGE_PALETTE = [
   { name: 'Validation',    icon: CheckCircle,  bg: 'bg-emerald-400/25', border: 'border-emerald-400/40', text: 'text-emerald-300', dot: 'bg-emerald-400' },
 ];
 
-function getStage(index: number) {
+const SPECIAL_STAGES: Record<string, any> = { // eslint-disable-line @typescript-eslint/no-explicit-any
+  'Library Retrieval': { name: 'Library Retrieval', icon: Library, bg: 'bg-emerald-500/25', border: 'border-emerald-500/40', text: 'text-emerald-300', dot: 'bg-emerald-500' },
+  'Investigation': { name: 'Investigation', icon: ScanSearch, bg: 'bg-violet-400/25', border: 'border-violet-400/40', text: 'text-violet-300', dot: 'bg-violet-400' },
+};
+
+function getStage(index: number, stepName?: string) {
+  if (stepName && SPECIAL_STAGES[stepName]) return SPECIAL_STAGES[stepName];
   return STAGE_PALETTE[index % STAGE_PALETTE.length];
 }
 
 // ─── Custom Bubble Node ──────────────────────────────────────────────────────
-function CustomNode({ data }: { data: any }) {
+function CustomNode({ data }: { data: any }) { // eslint-disable-line @typescript-eslint/no-explicit-any
   const Icon = data.icon;
   const isActive = data.isActive;
 
@@ -39,7 +45,7 @@ function CustomNode({ data }: { data: any }) {
   return (
     <div
       className={`flex flex-col items-center gap-2.5 relative cursor-pointer select-none
-        transition-all duration-[600ms] ease-[cubic-bezier(0.25,1,0.5,1)]
+        transition-all duration-600 ease-[cubic-bezier(0.25,1,0.5,1)]
         ${isActive ? 'z-50' : 'z-10'}`}
       onClick={(e) => {
         e.stopPropagation();
@@ -53,7 +59,7 @@ function CustomNode({ data }: { data: any }) {
         className={`w-[50px] h-[50px] rounded-full flex items-center justify-center text-white
           border-[2.5px] ${data.borderColor || 'border-white/20'}
           backdrop-blur-sm
-          transition-all duration-[600ms] ease-[cubic-bezier(0.25,1,0.5,1)]
+          transition-all duration-600 ease-[cubic-bezier(0.25,1,0.5,1)]
           ${data.bgClass} ${stateClasses}`}
       >
         {data.showIcons ? (
@@ -91,10 +97,13 @@ interface SelectedInfo {
   content: string;
 }
 
+interface Thought {
+  step: string;
+  content: string;
+}
+
 // ─── Main Component ──────────────────────────────────────────────────────────
-export default function ReasoningChain({ thoughts, isGenerating }: { thoughts: any[], isGenerating?: boolean }) {
-  const [nodes, setNodes] = useState<Node[]>([]);
-  const [edges, setEdges] = useState<Edge[]>([]);
+export default function ReasoningChain({ thoughts, isGenerating }: { thoughts: Thought[], isGenerating?: boolean }) {
   const [showIcons, setShowIcons] = useState(true);
   const [selected, setSelected] = useState<SelectedInfo | null>(null);
 
@@ -103,7 +112,7 @@ export default function ReasoningChain({ thoughts, isGenerating }: { thoughts: a
     setSelected((prev) => prev && prev.index === index ? null : { index, label, content });
   }, []);
 
-  useEffect(() => {
+  const { nodes, edges } = useMemo(() => {
     const newNodes: Node[] = [];
     const newEdges: Edge[] = [];
 
@@ -130,7 +139,7 @@ export default function ReasoningChain({ thoughts, isGenerating }: { thoughts: a
 
     // ── Thought Nodes ──
     thoughts.forEach((thought, index) => {
-      const stage = getStage(index);
+      const stage = getStage(index, thought.step);
       const id = `thought-${index}`;
 
       const progress = (index + 1) / (thoughts.length + 1);
@@ -198,8 +207,7 @@ export default function ReasoningChain({ thoughts, isGenerating }: { thoughts: a
       markerEnd: { type: MarkerType.ArrowClosed, color: '#2A2A2C', width: 14, height: 14 }
     });
 
-    setNodes(newNodes);
-    setEdges(newEdges);
+    return { nodes: newNodes, edges: newEdges };
   }, [thoughts, isGenerating, showIcons, handleNodeClick]);
 
   if (!thoughts || thoughts.length === 0) return null;
@@ -228,7 +236,7 @@ export default function ReasoningChain({ thoughts, isGenerating }: { thoughts: a
           </button>
           <div className="w-px h-3 bg-[#222]" />
           <span className={`text-[10px] uppercase font-semibold tracking-wider ${currentStage ? currentStage.text : 'text-emerald-300'}`}>
-            {currentPhaseIndex > 0 ? `${getStage(currentPhaseIndex - 1).name}` : 'Complete'}
+            {currentPhaseIndex > 0 ? `${getStage(currentPhaseIndex - 1, thoughts[currentPhaseIndex - 1]?.step).name}` : 'Complete'}
           </span>
           <div className="w-px h-3 bg-[#222]" />
           <span className="text-[#444] text-[10px] uppercase font-semibold tracking-wider">
@@ -250,7 +258,7 @@ export default function ReasoningChain({ thoughts, isGenerating }: { thoughts: a
         zoomOnPinch={false}
         panOnScroll={false}
         zoomOnDoubleClick={false}
-        className="!bg-transparent"
+        className="bg-transparent!"
         onPaneClick={() => setSelected(null)}
       >
         <Background color="#161618" gap={28} size={1} />

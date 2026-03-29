@@ -126,6 +126,33 @@ def initialize_gemini_rag():
     )
     return retriever_tool
 
+def get_rag_context(query: str):
+    """
+    Search the vector store and return context with metadata (filename, etc).
+    """
+    embeddings = GoogleGenerativeAIEmbeddings(
+        model="models/text-embedding-004",
+        google_api_key=GOOGLE_API_KEY
+    )
+    if not os.path.exists(PERSIST_DIR):
+        return None
+    
+    vectorstore = Chroma(persist_directory=PERSIST_DIR, embedding_function=embeddings)
+    docs = vectorstore.similarity_search(query, k=3)
+    
+    if not docs:
+        return None
+        
+    context_chunks = []
+    sources = []
+    for d in docs:
+        source_name = os.path.basename(d.metadata.get("source", "Unknown"))
+        context_chunks.append(f"[Source: {source_name}]\n{d.page_content}")
+        if source_name not in sources:
+            sources.append(source_name)
+            
+    return {"context": "\n\n".join(context_chunks), "sources": sources}
+
 def get_rag_tool():
     """
     Global getter for the RAG tool with error handling.
