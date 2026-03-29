@@ -23,7 +23,7 @@ import ReasoningChain from "../components/ReasoningChain";
 import StarBackground from "../components/StarBackground";
 import { Message, ChatSession } from "../@types/index";
 import { HOT_TOPICS, PLACEHOLDER_IDEAS } from "../utils/constants";
-import { sendPromptToAgent } from "../api/chatClient";
+import { sendPromptToAgent, Citation } from "../api/chatClient";
 import { useChatState } from "../hooks/useChatState";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { atomDark, materialLight } from "react-syntax-highlighter/dist/esm/styles/prism";
@@ -102,7 +102,8 @@ const CodeBlock = ({ code, lang, isDarkMode }: { code: string; lang: string; isD
   );
 };
 
-const MessageContent = ({ content, isUser, theme, isDarkMode }: { content: string; isUser: boolean; theme: ThemeProps; isDarkMode: boolean }) => {
+const MessageContent = ({ content, isUser, theme, isDarkMode, citations }: { content: string; isUser: boolean; theme: ThemeProps; isDarkMode: boolean; citations?: Citation[] }) => {
+  const [activeCitation, setActiveCitation] = useState<Citation | null>(null);
   if (isUser) {
     return <p className="whitespace-pre-wrap leading-relaxed text-[15px]">{content}</p>;
   }
@@ -126,10 +127,66 @@ const MessageContent = ({ content, isUser, theme, isDarkMode }: { content: strin
     return <CodeBlock code={rawCode.code} lang={rawCode.lang} isDarkMode={isDarkMode} />;
   }
 
+  const renderTextWithCitations = (text: string, citations?: Citation[]) => {
+    if (!citations || citations.length === 0) return <p className="whitespace-pre-wrap py-1">{text}</p>;
+
+    // Sort citations by length (descending) to avoid partial matches on shorter claims
+    const sortedCitations = [...citations].sort((a, b) => b.claim.length - a.claim.length);
+
+    // This is a simple implementation: wrap exact matches of claims.
+    // In a real app, we might use regex with boundary checks or NLP.
+    const parts: (string | React.ReactNode)[] = [text];
+
+    sortedCitations.forEach((cit) => {
+        for (let i = 0; i < parts.length; i++) {
+            const part = parts[i];
+            if (typeof part !== 'string') continue;
+
+            const claimIndex = part.indexOf(cit.claim);
+            if (claimIndex !== -1) {
+                const before = part.substring(0, claimIndex);
+                const after = part.substring(claimIndex + cit.claim.length);
+                const element = (
+                    <span 
+                        key={`${cit.source}-${i}`}
+                        className={`relative cursor-help transition-all duration-300 border-b-2 ${
+                            cit.verification_status === 'verified' ? 'border-emerald-500/40 hover:bg-emerald-500/10' : 'border-amber-500/40 hover:bg-amber-500/10'
+                        }`}
+                        onMouseEnter={() => setActiveCitation(cit)}
+                        onMouseLeave={() => setActiveCitation(null)}
+                    >
+                        {cit.claim}
+                        {activeCitation === cit && (
+                            <span className="absolute bottom-full left-0 mb-2 w-64 p-3 rounded-xl bg-[#161618] border border-white/10 shadow-2xl z-50 text-[11px] animate-in fade-in zoom-in slide-in-from-bottom-2 duration-200">
+                                <div className="flex items-center justify-between mb-1.5">
+                                    <span className="font-bold flex items-center gap-1">
+                                        {cit.verification_status === 'verified' ? <ShieldCheck className="w-3 h-3 text-emerald-500" /> : <ShieldAlert className="w-3 h-3 text-amber-500" />}
+                                        {cit.verification_status === 'verified' ? 'Verified Evidence' : 'Unverified Claim'}
+                                    </span>
+                                    <span className="text-[9px] px-1 bg-white/5 rounded text-white/40 uppercase tracking-tighter">AI Analysis</span>
+                                </div>
+                                <div className="text-white/80 leading-relaxed mb-2 italic">&ldquo;{cit.claim}&rdquo;</div>
+                                <div className="pt-2 border-t border-white/5 flex items-center gap-1.5 text-[10px] text-purple-400 font-medium">
+                                    <FileText className="w-3 h-3" />
+                                    Source: {cit.source}
+                                </div>
+                            </span>
+                        )}
+                    </span>
+                );
+                parts.splice(i, 1, before, element, after);
+                i += 2; // skip the new element and 'after' part
+            }
+        }
+    });
+
+    return <div className="whitespace-pre-wrap py-1 leading-relaxed">{parts}</div>;
+  };
+
   const parts = content.split(/(```[\s\S]*?(?:```|$))/g).filter(Boolean);
   
   return (
-    <div className={`leading-relaxed text-[15px] ${theme.textPrimary} space-y-4`}>
+    <div className={`leading-relaxed text-[15px] ${theme.textPrimary} space-y-4 relative`}>
       {parts.map((part, index) => {
         if (part.startsWith('```')) {
           const match = part.match(/```(\w*)\n([\s\S]*?)(?:```|$)/);
@@ -144,9 +201,9 @@ const MessageContent = ({ content, isUser, theme, isDarkMode }: { content: strin
             const code = smallMatch[2];
             return <CodeBlock key={index} code={code} lang={lang} isDarkMode={isDarkMode} />;
           }
-          return <p key={index} className="whitespace-pre-wrap py-1">{part.replace(/```/g, '')}</p>;
+          return renderTextWithCitations(part.replace(/```/g, ''), citations);
         }
-        return <p key={index} className="whitespace-pre-wrap py-1">{part}</p>;
+        return <div key={index}>{renderTextWithCitations(part, citations)}</div>;
       })}
     </div>
   );
@@ -502,7 +559,12 @@ export default function NeoticMain() {
     try {
       const userPrefs = { name: userName, interests: userInterests };
       const data = await sendPromptToAgent(text, controller, undefined, userPrefs);
-      const responseMessage: Message = { role: "assistant", content: data.final_answer, thoughts: data.thoughts };
+      const responseMessage: Message = { 
+        role: "assistant", 
+        content: data.final_answer, 
+        thoughts: data.thoughts, 
+        citations: data.citations 
+      };
       const updatedMessages = [...newMessages, responseMessage];
       setMessages(updatedMessages);
 
@@ -700,7 +762,7 @@ export default function NeoticMain() {
                   </div>}
                   <div className={`w-full overflow-hidden group ${msg.role === 'user' ? `max-w-[85%] ${isDarkMode ? 'bg-purple-900/60' : 'bg-slate-900'} dark:bg-purple-700 text-white py-3.5 px-5 rounded-2xl shadow-lg ${theme.accentShadow}` : 'pt-2'}`}>
                     {msg.role === 'assistant' && msg.thoughts && msg.thoughts.length > 0 && <ReasoningChain thoughts={msg.thoughts} isGenerating={isGenerating && i === messages.length - 1} />}
-                    <MessageContent content={msg.content} isUser={msg.role === 'user'} theme={theme} isDarkMode={isDarkMode} />
+                    <MessageContent content={msg.content} isUser={msg.role === 'user'} theme={theme} isDarkMode={isDarkMode} citations={msg.citations} />
                   </div>
                 </div>
               ))}
