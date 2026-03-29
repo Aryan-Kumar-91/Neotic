@@ -22,3 +22,4 @@ class ChatRequest(BaseModel):
     """
     prompt: str
     files: Optional[List[FileData]] = None
+    user_prefs: Optional[dict] = None

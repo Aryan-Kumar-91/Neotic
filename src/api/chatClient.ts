@@ -22,7 +22,8 @@ interface Thought {
 export async function sendPromptToAgent(
   input: string,
   abortController: AbortController,
-  attachments?: File[]
+  attachments?: File[],
+  userPrefs?: { name: string; interests: string }
 ): Promise<{ thoughts: Thought[]; final_answer: string }> {
   
   // Build attachment payloads
@@ -41,7 +42,7 @@ export async function sendPromptToAgent(
   const response = await fetch(`${apiBase}/api/chat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt: input, files }),
+    body: JSON.stringify({ prompt: input, files, user_prefs: userPrefs }),
     signal: abortController.signal,
   });
 
