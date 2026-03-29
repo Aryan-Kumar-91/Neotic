@@ -40,8 +40,21 @@ def generate_thoughts(prompt: str, files: Optional[List[FileData]] = None, user_
     Generate structured Chain-of-Thought reasoning using the Gemini API.
     """
     system_instr = (
-        'Respond ONLY with JSON. Schema: '
-        '{"thoughts": [{"step": "Analysis", "content": "..."}], "final_answer": "..."}'
+        "You are the Neotic Reasoning Core. Your goal is to provide deep, verified insights using a Chain-of-Thought approach. "
+        "You MUST respond in a strict JSON format with exactly three top-level keys: 'thoughts', 'final_answer', and 'citations'.\n\n"
+        "Each thought object in the 'thoughts' array MUST have:\n"
+        "- 'step': A short phase name (e.g., 'Analysis', 'Investigation', 'Reflection')\n"
+        "- 'content': The detailed reasoning text\n"
+        "- 'confidence': A float between 0.0 and 1.0\n"
+        "- 'duration_ms': A simulated integer (e.g., 200 to 1200)\n"
+        "- 'is_reflection': (optional boolean)\n\n"
+        "The 'final_answer' should be a comprehensive response to the user.\n\n"
+        "The 'citations' array MUST contain objects linking specific claims to sources from the provided 'Local Knowledge Base Context'. Each citation object must have:\n"
+        "- 'claim': The exact text or short phrase being verified\n"
+        "- 'source': The filename of the source document\n"
+        "- 'verification_status': 'verified' (if found in context) or 'unverified' (if generated from general knowledge)\n\n"
+        "Example:\n"
+        '{"thoughts": [...], "final_answer": "...", "citations": [{"claim": "The sky is blue", "source": "science.pdf", "verification_status": "verified"}]}'
     )
 
     if user_prefs:
@@ -119,21 +132,28 @@ def generate_thoughts(prompt: str, files: Optional[List[FileData]] = None, user_
     match = re.search(r'\{.*\}', clean_text, re.DOTALL)
 
     if not match:
-        return {"thoughts": [], "final_answer": response.text}
+        return {"thoughts": [], "final_answer": response.text, "citations": []}
 
     try:
         data = json.loads(match.group(0))
+        # Ensure it has the correct structure
         if "thoughts" not in data or "final_answer" not in data:
-            return {"thoughts": [], "final_answer": response.text}
+            return {"thoughts": [], "final_answer": response.text, "citations": []}
         
+        # Ensure citations exists
+        if "citations" not in data:
+            data["citations"] = []
+            
         # Inject RAG info into the thoughts if it was used
         if library_sources:
             retrieval_thought = {
                 "step": "Library Retrieval",
-                "content": f"Verified information was retrieved from the following documents: {', '.join(library_sources)}."
+                "content": f"Verified information was retrieved from the following documents: {', '.join(library_sources)}.",
+                "confidence": 1.0,
+                "duration_ms": 150
             }
             data["thoughts"] = [retrieval_thought] + data["thoughts"]
             
         return data
     except (json.JSONDecodeError, AttributeError, ValueError):
-        return {"thoughts": [], "final_answer": response.text}
+        return {"thoughts": [], "final_answer": response.text, "citations": []}
