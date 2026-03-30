@@ -69,9 +69,9 @@ _BASE_SYSTEM_INSTR = (
 
 
 def _build_system_instr(
-    user_prefs: Optional[dict],
-    files: Optional[List[FileData]],
-    rag_context: Optional[str],
+        user_prefs: Optional[dict],
+        files: Optional[List[FileData]],
+        rag_context: Optional[str],
 ) -> str:
     """Compose the full system instruction string from optional components."""
     instr = _BASE_SYSTEM_INSTR
@@ -103,8 +103,8 @@ def _build_system_instr(
 
 
 def _build_content_parts(
-    full_prompt: str,
-    files: Optional[List[FileData]],
+        full_prompt: str,
+        files: Optional[List[FileData]],
 ) -> list:
     """Construct the multimodal content-parts list for the Gemini request."""
     parts = [full_prompt]
@@ -132,10 +132,10 @@ def _build_content_parts(
 
 
 def _append_text_file(
-    parts: list,
-    f_data: FileData,
-    f_bytes: bytes,
-    f_mime: str,
+        parts: list,
+        f_data: FileData,
+        f_bytes: bytes,
+        f_mime: str,
 ) -> None:
     """Decode a text-based file and inline its content into the prompt part."""
     try:
@@ -195,9 +195,9 @@ def _parse_response(response_text: str) -> dict:
 # ---------------------------------------------------------------------------
 
 def generate_thoughts(
-    prompt: str,
-    files: Optional[List[FileData]] = None,
-    user_prefs: Optional[dict] = None,
+        prompt: str,
+        files: Optional[List[FileData]] = None,
+        user_prefs: Optional[dict] = None,
 ) -> dict:
     """
     Generate structured Chain-of-Thought reasoning using the Gemini API.
