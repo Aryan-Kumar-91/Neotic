@@ -8,9 +8,9 @@ from src.validators.chatvalidator import validate_prompt
 from src.types.schemas import FileData
 
 async def process_chat(
-    prompt: str,
-    files: Optional[List[FileData]] = None,
-    user_prefs: Optional[dict] = None,
+        prompt: str,
+        files: Optional[List[FileData]] = None,
+        user_prefs: Optional[dict] = None,
 ):
     """
     Validate input, invoke the thought generation service, and return a response.
