@@ -37,3 +37,5 @@ jobs:
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_NEOTIC_D3C1F }}'
           channelId: live
           projectId: neotic-d3c1f
+        env:
+          FIREBASE_CLI_EXPERIMENTS: webframeworks
