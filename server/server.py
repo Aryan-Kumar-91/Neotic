@@ -19,6 +19,11 @@ setup_cors(APP)
 APP.include_router(chat_router, prefix="/api")
 APP.include_router(library_router, prefix="/api/library")
 
+@APP.get("/api/health")
+async def health_check():
+    """Basic health check endpoint for testing."""
+    return {"status": "healthy"}
+
 # Handle RAG WebSockets (Consolidated from rag-visualizer)
 @APP.websocket("/ws/rag")
 async def websocket_rag(websocket: WebSocket):

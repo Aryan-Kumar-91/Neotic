@@ -6,17 +6,17 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "next lint"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.100.1",
     "@types/react-syntax-highlighter": "^15.5.13",
     "@xyflow/react": "^12.10.1",
-    "firebase": "^12.11.0",
+    "firebase": "^12.15.0",
     "lucide-react": "^1.7.0",
-    "next": "16.2.1",
-    "react": "19.2.4",
-    "react-dom": "19.2.4",
+    "next": "16.2.9",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
     "react-syntax-highlighter": "^16.1.1",
     "reactflow": "^11.11.4"
   },
