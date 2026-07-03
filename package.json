@@ -9,7 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.100.1",
+    "@supabase/supabase-js": "^2.110.0",
     "@types/react-syntax-highlighter": "^15.5.13",
     "@xyflow/react": "^12.10.1",
     "firebase": "^12.15.0",
