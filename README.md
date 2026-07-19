@@ -8,6 +8,9 @@
 
 **Neotic** is an enterprise-grade AI reasoning platform that bridges the gap between complex Chain-of-Thought (CoT) processes and user understanding. By visualizing internal analytical steps as a dynamic Directed Acyclic Graph (DAG), Neotic provides unprecedented transparency into AI decision-making.
 
+![Neotic Dashboard](./public/dashboard.gif)
+*A glimpse into the dynamic, real-time visual reasoning interface of Neotic.*
+
 ---
 
 ### Hackathon Spotlight
