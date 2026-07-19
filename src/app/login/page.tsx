@@ -61,11 +61,13 @@ export default function LoginPage() {
   const [mfaLoading, setMfaLoading] = useState(false);
 
   useEffect(() => {
-    try {
-      const t = localStorage.getItem("noetic_theme");
-      if (t === "dark") setIsDarkMode(true);
-    } catch {}
-    setIsLoaded(true);
+    setTimeout(() => {
+      try {
+        const t = localStorage.getItem("noetic_theme");
+        if (t === "dark") setIsDarkMode(true);
+      } catch {}
+      setIsLoaded(true);
+    }, 0);
   }, []);
 
   useEffect(() => {
