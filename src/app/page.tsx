@@ -347,20 +347,22 @@ export default function NeoticMain() {
   }, []);
 
   useEffect(() => {
-    try {
-      const t = localStorage.getItem("neotic_theme");
-      if (t === "dark") setIsDarkMode(true);
-      const gc = localStorage.getItem("neotic_guest_prompts");
-      if (gc) setGuestPromptCount(parseInt(gc, 10));
-      
-      const prefsMatch = document.cookie.match(/(?:^|; )user_prefs=([^;]*)/);
-      if (prefsMatch) {
-        const prefs = JSON.parse(decodeURIComponent(prefsMatch[1]));
-        if (prefs.name) setUserName(prefs.name);
-        if (prefs.interests) setUserInterests(prefs.interests);
-      }
-    } catch {}
-    setIsLoaded(true);
+    setTimeout(() => {
+      try {
+        const t = localStorage.getItem("neotic_theme");
+        if (t === "dark") setIsDarkMode(true);
+        const gc = localStorage.getItem("neotic_guest_prompts");
+        if (gc) setGuestPromptCount(parseInt(gc, 10));
+        
+        const prefsMatch = document.cookie.match(/(?:^|; )user_prefs=([^;]*)/);
+        if (prefsMatch) {
+          const prefs = JSON.parse(decodeURIComponent(prefsMatch[1]));
+          if (prefs.name) setUserName(prefs.name);
+          if (prefs.interests) setUserInterests(prefs.interests);
+        }
+      } catch {}
+      setIsLoaded(true);
+    }, 0);
   }, [setIsLoaded]);
 
   const saveUserPrefs = () => {
@@ -398,7 +400,7 @@ export default function NeoticMain() {
 
   useEffect(() => {
     if (settingsOpen && settingsTab === "library") {
-      fetchLibrary();
+      setTimeout(() => fetchLibrary(), 0);
     }
   }, [settingsOpen, settingsTab]);
 
@@ -509,8 +511,10 @@ export default function NeoticMain() {
 
   useEffect(() => {
     if (messages.length === 0) {
-      const shuffled = [...HOT_TOPICS].sort(() => 0.5 - Math.random());
-      setRandomPrompts(shuffled.slice(0, 4));
+      setTimeout(() => {
+        const shuffled = [...HOT_TOPICS].sort(() => 0.5 - Math.random());
+        setRandomPrompts(shuffled.slice(0, 4));
+      }, 0);
     }
   }, [messages.length]);
 
