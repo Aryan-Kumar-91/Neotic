@@ -1,12 +1,15 @@
 """
 WebSocket handler for real-time RAG visualization and streaming.
 """
+
 import json
 import uuid
+
 # pylint: disable=import-error
 from fastapi import WebSocket, WebSocketDisconnect
 from langchain_core.messages import HumanMessage
 from src.rag.service import CoTAsyncHandler, create_gemini_agent
+
 
 async def handle_rag_websocket(websocket: WebSocket):
     """
@@ -33,19 +36,21 @@ async def handle_rag_websocket(websocket: WebSocket):
             # Execute the agent, passing through the WebSocket callback handler
             response = await agent_executor.ainvoke(
                 {"messages": [HumanMessage(content=user_input)]},
-                config={"callbacks": [handler]}
+                config={"callbacks": [handler]},
             )
 
             # Extract final answer from the messages chain
             final_content = response["messages"][-1].content
 
             # Send completion response back to client
-            await websocket.send_json({
-                "id": str(uuid.uuid4()),
-                "parent_id": handler.parent_id,
-                "step": "Final Answer",
-                "content": final_content
-            })
+            await websocket.send_json(
+                {
+                    "id": str(uuid.uuid4()),
+                    "parent_id": handler.parent_id,
+                    "step": "Final Answer",
+                    "content": final_content,
+                }
+            )
 
     except WebSocketDisconnect:
         print("🔌 RAG Client disconnected.")
