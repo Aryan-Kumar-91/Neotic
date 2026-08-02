@@ -1,5 +1,6 @@
 """
-Service and tools for Retrieval-Augmented Generation (RAG) using Gemini and LangChain.
+Service for interacting with Google Gemini models and generating
+Chain-of-Thought responses.
 """
 
 import os
@@ -26,7 +27,7 @@ if not os.path.exists(DATA_DIR):
     os.makedirs(DATA_DIR)
 
 
-class CoTAsyncHandler(AsyncCallbackHandler):
+class CoTAsyncHandler(AsyncCallbackHandler):  # pylint: disable=too-many-ancestors
     """
     Custom Async handler for Gemini models.
     Streams retrieval and thought steps via WebSocket.
@@ -84,7 +85,8 @@ def initialize_gemini_rag():
     """
     # Use the embeddings model for Gemini
     embeddings = GoogleGenerativeAIEmbeddings(
-        model="models/text-embedding-004", google_api_key=GOOGLE_API_KEY
+        model="models/text-embedding-004",
+        google_api_key=GOOGLE_API_KEY,  # pyright: ignore[reportCallIssue]
     )
 
     if os.path.exists(PERSIST_DIR) and os.listdir(PERSIST_DIR):
@@ -132,7 +134,8 @@ def get_rag_context(query: str):
     Search the vector store and return context with metadata (filename, etc).
     """
     embeddings = GoogleGenerativeAIEmbeddings(
-        model="models/text-embedding-004", google_api_key=GOOGLE_API_KEY
+        model="models/text-embedding-004",
+        google_api_key=GOOGLE_API_KEY,  # pyright: ignore[reportCallIssue]
     )
     if not os.path.exists(PERSIST_DIR):
         return None

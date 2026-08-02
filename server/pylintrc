@@ -1,0 +1,29 @@
+[MAIN]
+# Match Codacy's Python target version
+py-version = 3.11
+
+# Keep in sync with .codacy.yml exclude_paths
+ignore-paths =
+    ^.*[/\\]__pycache__[/\\].*$
+    ^.*[/\\].venv[/\\].*$
+    ^.*[/\\]node_modules[/\\].*$
+    ^.*[/\\].next[/\\].*$
+
+[MESSAGES CONTROL]
+# import-error / no-name-in-module: Codacy's hosted Pylint runs in an
+# isolated sandbox with no project dependencies installed, so any
+# third-party import (fastapi, etc.) is unresolvable there regardless of
+# local setup. Disabled here to match what we disable in Codacy's
+# Code Patterns UI, so local and hosted results stay consistent.
+disable =
+    import-error,
+    no-name-in-module
+
+[FORMAT]
+# black's default line length
+max-line-length = 88
+
+[BASIC]
+argument-naming-style = snake_case
+attr-naming-style = snake_case
+variable-naming-style = snake_case
