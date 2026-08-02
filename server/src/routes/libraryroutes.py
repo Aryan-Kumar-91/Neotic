@@ -1,10 +1,16 @@
 """
 Routes for managing the research document library (upload, list, delete).
 """
+
 import os
 import shutil
 
-from fastapi import APIRouter, UploadFile, File, HTTPException  # pylint: disable=import-error
+from fastapi import (
+    APIRouter,
+    UploadFile,
+    File,
+    HTTPException,
+)  # pylint: disable=import-error
 
 ROUTER = APIRouter()
 DATA_DIR = "data"
@@ -23,7 +29,7 @@ def _resolve_safe_path(raw_name: str) -> str:
     # os.path.basename() is the recognised sanitiser for path-traversal:
     # it removes any leading directory components (e.g. '../').
     safe_name = os.path.basename(raw_name)
-    if not safe_name or safe_name in ('.', '..'):
+    if not safe_name or safe_name in (".", ".."):
         raise HTTPException(status_code=400, detail="Invalid filename.")
 
     base = os.path.realpath(DATA_DIR)
@@ -41,7 +47,7 @@ async def upload_document(file: UploadFile = File(...)):
     """
     # Sanitise the filename immediately; use only the sanitised value below.
     safe_name = os.path.basename(file.filename)
-    if not safe_name or safe_name in ('.', '..'):
+    if not safe_name or safe_name in (".", ".."):
         raise HTTPException(status_code=400, detail="Invalid filename.")
 
     file_path = _resolve_safe_path(safe_name)
@@ -74,7 +80,7 @@ async def delete_document(filename: str):
     """
     # Sanitise the filename immediately; use only the sanitised value below.
     safe_name = os.path.basename(filename)
-    if not safe_name or safe_name in ('.', '..'):
+    if not safe_name or safe_name in (".", ".."):
         raise HTTPException(status_code=400, detail="Invalid filename.")
 
     file_path = _resolve_safe_path(safe_name)
