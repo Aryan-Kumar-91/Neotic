@@ -22,19 +22,17 @@ google_genai.configure(api_key=GOOGLE_API_KEY)  # pyright: ignore
 # Prefer 'flash' models for speed.
 DEFAULT_MODEL_NAME = "models/gemini-2.0-flash"
 try:
-    list_fn = google_genai.list_models  # pyright: ignore[reportPrivateImportUsage]
-    for model_meta in list_fn():
+    list_models_fn = (
+        google_genai.list_models  # pyright: ignore[reportPrivateImportUsage]
+    )  # pyright: ignore[reportPrivateImportUsage]
+    for model_meta in list_models_fn():
         if "generateContent" in model_meta.supported_generation_methods:
             if "flash" in model_meta.name:
                 DEFAULT_MODEL_NAME = model_meta.name
                 break
 except Exception as list_error:  # pylint: disable=broad-except
-    print(
-        f"Warning: Could not list models ({list_error}), "
-        f"falling back to {DEFAULT_MODEL_NAME}"
-    )
 
-print(f"SUCCESS: Bound AI to model: {DEFAULT_MODEL_NAME}")
+    print(f"SUCCESS: Bound AI to model: {DEFAULT_MODEL_NAME}")
 # Enable Gemini's built-in Google Search capability
 AI_MODEL = google_genai.GenerativeModel(  # pyright: ignore[reportPrivateImportUsage]
     model_name=DEFAULT_MODEL_NAME, tools=[{"google_search_retrieval": {}}]

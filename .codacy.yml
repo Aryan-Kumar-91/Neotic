@@ -4,6 +4,7 @@ exclude_paths:
   - ".next/**"
   - "**/__pycache__/**"
   - "**/.venv/**"
+  - "src/app/globals.css"
 
 engines:
   pylint:
