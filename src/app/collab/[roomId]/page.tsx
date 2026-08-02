@@ -89,8 +89,10 @@ export default function CollabRoom() {
   // Process incoming messages from peers
   useEffect(() => {
     if (!incomingMessage) return;
-    setMessages((prev) => [...prev, incomingMessage]);
-    clearIncoming();
+    setTimeout(() => {
+      setMessages((prev) => [...prev, incomingMessage]);
+      clearIncoming();
+    }, 0);
   }, [incomingMessage, clearIncoming]);
 
   // Auto-scroll to bottom on new messages
