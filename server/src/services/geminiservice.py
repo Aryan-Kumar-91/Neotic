@@ -2,6 +2,7 @@
 Service for interacting with Google Gemini models and generating
 Chain-of-Thought responses.
 """
+
 import base64
 import json
 import re
@@ -35,7 +36,7 @@ except Exception as list_error:  # pylint: disable=broad-except
 
 print(f"SUCCESS: Bound AI to model: {DEFAULT_MODEL_NAME}")
 # Enable Gemini's built-in Google Search capability
-AI_MODEL = google_genai.GenerativeModel( # pyright: ignore[reportPrivateImportUsage]
+AI_MODEL = google_genai.GenerativeModel(  # pyright: ignore[reportPrivateImportUsage]
     model_name=DEFAULT_MODEL_NAME, tools=[{"google_search_retrieval": {}}]
 )
 
