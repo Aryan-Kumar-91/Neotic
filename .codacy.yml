@@ -3,8 +3,10 @@ exclude_paths:
   - "node_modules/**"
   - ".next/**"
   - "**/__pycache__/**"
+  - "**/.venv/**"
 
 engines:
-  csslint:
-    exclude_paths:
-      - "src/app/globals.css"
+  pylint:
+    enabled: true
+  prospector:
+    enabled: true

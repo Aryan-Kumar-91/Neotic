@@ -1,7 +1,7 @@
 """
-Service for interacting with Google Gemini models and generating Chain-of-Thought responses.
+Service for interacting with Google Gemini models and generating
+Chain-of-Thought responses.
 """
-
 import base64
 import json
 import re
@@ -14,14 +14,15 @@ from src.config.env import GOOGLE_API_KEY
 from src.types.schemas import FileData
 from src.rag.service import get_rag_context
 
-google_genai.configure(api_key=GOOGLE_API_KEY)
+google_genai.configure(api_key=GOOGLE_API_KEY)  # pyright: ignore
 
 # [DYNAMIC MODEL SELECTION]
 # Auto-bind to the best available model that supports generateContent.
 # Prefer 'flash' models for speed.
 DEFAULT_MODEL_NAME = "models/gemini-2.0-flash"
 try:
-    for model_meta in google_genai.list_models():
+    list_fn = google_genai.list_models  # pyright: ignore[reportPrivateImportUsage]
+    for model_meta in list_fn():
         if "generateContent" in model_meta.supported_generation_methods:
             if "flash" in model_meta.name:
                 DEFAULT_MODEL_NAME = model_meta.name
@@ -34,7 +35,7 @@ except Exception as list_error:  # pylint: disable=broad-except
 
 print(f"SUCCESS: Bound AI to model: {DEFAULT_MODEL_NAME}")
 # Enable Gemini's built-in Google Search capability
-AI_MODEL = google_genai.GenerativeModel(
+AI_MODEL = google_genai.GenerativeModel( # pyright: ignore[reportPrivateImportUsage]
     model_name=DEFAULT_MODEL_NAME, tools=[{"google_search_retrieval": {}}]
 )
 
@@ -118,7 +119,8 @@ def _build_content_parts(
             f_mime = f_data.mime_type
 
             if f_mime.startswith("image/"):
-                parts.append({"mime_type": f_mime, "data": f_bytes})
+                part = {"mime_type": f_mime, "data": f_bytes}
+                parts.append(part)  # pyright: ignore[reportArgumentType]
                 print(
                     f"✓ Attached image: {f_data.name} "
                     f"({f_mime}, {len(f_bytes)} bytes)"
