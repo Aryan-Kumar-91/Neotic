@@ -10,3 +10,4 @@ pypdf
 tiktoken
 pydantic
 websockets
+python-multipart
