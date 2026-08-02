@@ -9,7 +9,7 @@ importers:
   .:
     dependencies:
       '@supabase/supabase-js':
-        specifier: ^2.110.8
+        specifier: ^2.111.0
         version: 2.111.0
       '@types/react-syntax-highlighter':
         specifier: ^15.5.13
