@@ -1,6 +1,5 @@
 """
-Service for interacting with Google Gemini models and generating
-Chain-of-Thought responses.
+Service and tools for Retrieval-Augmented Generation (RAG) using Gemini and LangChain.
 """
 
 import os
