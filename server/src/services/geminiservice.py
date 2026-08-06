@@ -31,8 +31,9 @@ try:
                 DEFAULT_MODEL_NAME = model_meta.name
                 break
 except Exception as list_error:  # pylint: disable=broad-except
+    print(f"WARNING: Failed to dynamically bind model: {list_error}")
 
-    print(f"SUCCESS: Bound AI to model: {DEFAULT_MODEL_NAME}")
+print(f"SUCCESS: Bound AI to model: {DEFAULT_MODEL_NAME}")
 # Enable Gemini's built-in Google Search capability
 AI_MODEL = google_genai.GenerativeModel(  # pyright: ignore[reportPrivateImportUsage]
     model_name=DEFAULT_MODEL_NAME, tools=[{"google_search_retrieval": {}}]
