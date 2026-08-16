@@ -24,45 +24,15 @@ from src.rag.service import get_rag_context
 google_genai.configure(api_key=GOOGLE_API_KEY)  # pyright: ignore
 
 # [DYNAMIC MODEL SELECTION]
-# Test candidate models for availability and bind to the best working model.
-CANDIDATE_MODELS = [
+# Preferred model candidates for runtime fallback without startup network pings
+PREFERRED_MODELS = [
+    "gemini-3.7-flash",
+    "gemini-3.6-flash",
+    "gemini-3.5-flash",
+    "gemini-3.1-flash-lite",
     "gemini-flash-latest",
-    "models/gemini-flash-latest",
-    "models/gemini-2.0-flash",
-    "gemini-2.0-flash",
-    "models/gemini-1.5-flash",
-    "gemini-1.5-flash",
-    "models/gemini-pro-latest",
     "gemini-pro-latest",
 ]
-
-DEFAULT_MODEL_NAME = "gemini-flash-latest"
-AI_MODEL = None
-
-for candidate in CANDIDATE_MODELS:
-    try:
-        test_model = google_genai.GenerativeModel(
-            model_name=candidate, tools=[{"google_search_retrieval": {}}]
-        )
-        test_model.generate_content("ping")
-        AI_MODEL = test_model
-        DEFAULT_MODEL_NAME = candidate
-        break
-    except Exception:
-        try:
-            test_model = google_genai.GenerativeModel(model_name=candidate)
-            test_model.generate_content("ping")
-            AI_MODEL = test_model
-            DEFAULT_MODEL_NAME = candidate
-            break
-        except Exception:
-            continue
-
-if not AI_MODEL:
-    DEFAULT_MODEL_NAME = "gemini-flash-latest"
-    AI_MODEL = google_genai.GenerativeModel(model_name=DEFAULT_MODEL_NAME)
-
-print(f"[OK] Bound AI to verified model: {DEFAULT_MODEL_NAME}")
 
 # ---------------------------------------------------------------------------
 # System instruction builder helpers
@@ -244,8 +214,38 @@ def generate_thoughts(
     content_parts = _build_content_parts(full_prompt, files)
 
     print(f"-> Sending {len(content_parts)} part(s) to Gemini...")
-    response = AI_MODEL.generate_content(content_parts)
-    print(f"[OK] AI Response received for: {prompt[:30]}...")
+
+    response = None
+    last_error = None
+
+    for model_name in PREFERRED_MODELS:
+        try:
+            model = google_genai.GenerativeModel(model_name=model_name)
+            response = model.generate_content(content_parts)
+            print(f"[OK] AI Response received using '{model_name}' for: {prompt[:30]}...")
+            break
+        except Exception as err:
+            print(f"[WARN] Model '{model_name}' attempt failed: {err}")
+            last_error = err
+
+    if response is None:
+        err_str = str(last_error) if last_error else "Unknown Gemini API error"
+        print(f"[ERROR] All Gemini model attempts failed: {err_str}")
+        return {
+            "thoughts": [
+                {
+                    "step": "API Quota / Connection Alert",
+                    "content": f"Gemini API request status: {err_str}",
+                    "confidence": 0.0,
+                    "duration_ms": 100,
+                }
+            ],
+            "final_answer": (
+                "⚠️ **Gemini API Limit / Quota Exceeded**: The free-tier request quota for your `GOOGLE_API_KEY` has been reached. "
+                "Please wait 30–60 seconds for the rate limit to reset, or update `GOOGLE_API_KEY` in `server/.env` with a fresh key from [Google AI Studio](https://aistudio.google.com)."
+            ),
+            "citations": [],
+        }
 
     data = _parse_response(response.text)
 
