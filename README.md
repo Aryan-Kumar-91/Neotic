@@ -2,7 +2,7 @@
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![React](https://img.shields.io/badge/React-19.2-61DAFB?logo=react&logoColor=black)](https://react.dev/)
-[![Next.js](https://img.shields.io/badge/Next.js-16.2-000000?logo=nextdotjs&logoColor=white)](https://nextjs.org/)
+[![Vite](https://img.shields.io/badge/Vite-8.2-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.109-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![Python](https://img.shields.io/badge/Python-3.12.x-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 
@@ -34,7 +34,7 @@ Developed and presented at **HIRE-4-THON**, a National Level Hackathon organized
 
 ### Frontend
 
-- **Framework:** Next.js 16 (React 19)
+- **Framework:** Vite + React 19 SPA
 - **Styling:** Tailwind CSS 4 + Lucide Icons
 - **Visualization:** React Flow (@xyflow/react)
 - **Authentication:** Firebase Auth & Firestore
@@ -150,8 +150,8 @@ python server.py
 
 ```text
 Neotic/
-├── src/                # Next.js Frontend
-│   ├── app/            # App Router (Parallel & Intercepting Routes)
+├── src/                # React Vite Frontend
+│   ├── pages/          # Page Components (Routing)
 │   ├── components/     # UI/UX & React Flow Visualizers
 │   ├── hooks/          # Custom state hooks (useChatState, etc.)
 │   └── api/            # Isolated Chat & RAG clients
