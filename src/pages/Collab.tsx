@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
+import { useParams, useNavigate, Link } from "react-router-dom";
+
 import { auth } from "@/lib/firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useCollabRoom } from "@/hooks/useCollabRoom";
@@ -14,7 +14,7 @@ import {
   Send, Bot, Loader2, Copy, Check, LogOut, Users, ArrowLeft, Square
 } from "lucide-react";
 
-// ─── Markdown Parser (reused from main page) ────────────────────────────────
+// â”€â”€â”€ Markdown Parser (reused from main page) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const MessageContent = ({ content }: { content: string }) => {
   const parts = content.split(/(```[\s\S]*?(?:```|$))/g).filter(Boolean);
   return (
@@ -42,7 +42,7 @@ const MessageContent = ({ content }: { content: string }) => {
   );
 };
 
-// ─── Avatar component ────────────────────────────────────────────────────────
+// â”€â”€â”€ Avatar component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function UserAvatar({ email, color, size = "sm" }: { email: string; color: string; size?: "sm" | "md" }) {
   const s = size === "sm" ? "w-7 h-7 text-[11px]" : "w-8 h-8 text-xs";
   return (
@@ -56,10 +56,10 @@ function UserAvatar({ email, color, size = "sm" }: { email: string; color: strin
   );
 }
 
-// ─── Main Page ───────────────────────────────────────────────────────────────
+// â”€â”€â”€ Main Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export default function CollabRoom() {
   const params = useParams();
-  const router = useRouter();
+  const router = useNavigate();
   const roomId = params.roomId as string;
 
   const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -73,12 +73,12 @@ export default function CollabRoom() {
   const feedRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  // Auth check — only logged-in users can access
+  // Auth check â€” only logged-in users can access
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUserEmail(user?.email ?? null);
       setAuthChecked(true);
-      if (!user) router.push("/login");
+      if (!user) router("/login");
     });
     return () => unsubscribe();
   }, [router]);
@@ -163,7 +163,7 @@ export default function CollabRoom() {
 
   const handleLogout = async () => {
     await signOut(auth);
-    router.push("/login");
+    router("/login");
   };
 
   if (!authChecked) {
@@ -180,10 +180,10 @@ export default function CollabRoom() {
     <div className="flex flex-col h-screen bg-[#131314] text-[#E3E3E3] font-sans overflow-hidden relative">
       <StarBackground />
 
-      {/* ── Header ── */}
+      {/* â”€â”€ Header â”€â”€ */}
       <header className="px-4 py-3 flex items-center justify-between border-b border-[#1E1E20] bg-[#131314]/90 backdrop-blur-md z-10 shrink-0">
         <div className="flex items-center gap-3">
-          <Link href="/" className="p-2 rounded-md hover:bg-[#1E1E20] transition-colors" title="Back to home">
+          <Link to="/" className="p-2 rounded-md hover:bg-[#1E1E20] transition-colors" title="Back to home">
             <ArrowLeft className="w-5 h-5 text-[#C4C7C5]" />
           </Link>
           <div>
@@ -227,7 +227,7 @@ export default function CollabRoom() {
         </div>
       </header>
 
-      {/* ── Chat Feed ── */}
+      {/* â”€â”€ Chat Feed â”€â”€ */}
       <div ref={feedRef} className="flex-1 overflow-y-auto w-full max-w-4xl mx-auto px-4 pb-48 custom-scrollbar">
         {messages.length === 0 ? (
           <div className="mt-20 flex flex-col items-center text-center gap-3">
@@ -283,7 +283,7 @@ export default function CollabRoom() {
         )}
       </div>
 
-      {/* ── Input Bar ── */}
+      {/* â”€â”€ Input Bar â”€â”€ */}
       <div className="absolute bottom-0 w-full bg-linear-to-t from-[#131314] via-[#131314] to-transparent pt-12 pb-6 px-4">
         <div className="max-w-[850px] mx-auto">
           <div className="bg-[#1E1E20] rounded-xl flex flex-col px-4 pt-3 pb-2 border border-[#1E1E20] focus-within:border-blue-500/40 transition-colors">
@@ -320,7 +320,7 @@ export default function CollabRoom() {
             </div>
           </div>
           <p className="text-center text-xs text-[#555] mt-3">
-            Collaborative session · All messages are shared in real time
+            Collaborative session Â· All messages are shared in real time
           </p>
         </div>
       </div>

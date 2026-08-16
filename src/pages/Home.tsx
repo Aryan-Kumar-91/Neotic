@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import Link from "next/link";
-import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { Link } from "react-router-dom";
+
+import { useNavigate } from "react-router-dom";
 import { auth } from "@/lib/firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { 
@@ -210,7 +210,7 @@ const MessageContent = ({ content, isUser, theme, isDarkMode, citations }: { con
 };
 
 export default function NeoticMain() {
-  const router = useRouter();
+  const router = useNavigate();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
@@ -267,7 +267,7 @@ export default function NeoticMain() {
 
   const handleLogout = async () => {
     await signOut(auth);
-    router.push("/login");
+    router("/login");
   };
 
   const startMfaEnrollment = async () => {
@@ -356,7 +356,7 @@ export default function NeoticMain() {
           if (prefs.name) setUserName(prefs.name);
           if (prefs.interests) setUserInterests(prefs.interests);
         }
-      } catch {}
+      } catch { /* Ignore malformed persisted preferences. */ }
       setIsLoaded(true);
     }, 0);
   }, [setIsLoaded]);
@@ -679,7 +679,7 @@ export default function NeoticMain() {
              <div className={`p-5 rounded-2xl border border-dashed ${theme.borderMain} text-center space-y-4`}>
                 <HistoryIcon className="w-5 h-5 mx-auto opacity-30" />
                 <p className="text-xs font-medium">Sign in to save history.</p>
-                <Link href="/login" className={`block w-full py-2 ${theme.accentBg} text-white rounded-lg text-xs font-bold`}>Sign In</Link>
+                <Link to="/login" className={`block w-full py-2 ${theme.accentBg} text-white rounded-lg text-xs font-bold`}>Sign In</Link>
              </div>
            )}
         </div>
@@ -690,7 +690,7 @@ export default function NeoticMain() {
           <div className="flex items-center gap-4">
             {!sidebarOpen && <button onClick={() => setSidebarOpen(true)} className={`p-2 rounded-lg ${theme.hoverBg}`}><Menu className="w-5 h-5" /></button>}
             <button onClick={handleNewChat} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-              <Image src={isDarkMode ? "/neotic-minimalist-logo-darkmode-v2.png" : "/neotic-minimalist-logo-lightmode-v2.png"} alt="Neotic Logo" width={32} height={32} unoptimized priority className="rounded-lg shadow-lg w-8 h-8 object-contain" />
+              <img src={isDarkMode ? "/neotic-minimalist-logo-darkmode-v2.png" : "/neotic-minimalist-logo-lightmode-v2.png"} alt="Neotic Logo" width={32} height={32} className="rounded-lg shadow-lg w-8 h-8 object-contain" />
               <span className={`text-lg font-bold bg-clip-text text-transparent bg-linear-to-r ${theme.accentGradient}`}>Neotic</span>
             </button>
           </div>
@@ -719,7 +719,7 @@ export default function NeoticMain() {
                 <button onClick={handleLogout} className={`p-2 rounded-lg ${theme.textMuted} ${theme.hoverBg} hover:text-red-500`}><LogOut className="w-4 h-4" /></button>
               </>
             ) : (
-              <Link href="/login" className={`px-4 py-2 rounded-lg text-xs font-bold ${theme.accentBg} text-white shadow-md hover:opacity-90 transition-opacity`}>
+              <Link to="/login" className={`px-4 py-2 rounded-lg text-xs font-bold ${theme.accentBg} text-white shadow-md hover:opacity-90 transition-opacity`}>
                 Sign In
               </Link>
             )}
@@ -729,7 +729,7 @@ export default function NeoticMain() {
         <div className="flex-1 overflow-y-auto w-full max-w-4xl mx-auto px-6 pb-60 custom-scrollbar pt-8">
           {messages.length === 0 ? (
             <div className="mt-32 flex flex-col items-center text-center">
-              <Image src={isDarkMode ? "/neotic-minimalist-logo-darkmode-v2.png" : "/neotic-minimalist-logo-lightmode-v2.png"} alt="Neotic Brand" width={96} height={96} unoptimized priority className={`mb-6 drop-shadow-[0_0_15px_${isDarkMode ? 'rgba(168,85,247,0.5)' : 'rgba(59,130,246,0.5)'}] animate-pulse w-24 h-24 object-contain`} />
+              <img src={isDarkMode ? "/neotic-minimalist-logo-darkmode-v2.png" : "/neotic-minimalist-logo-lightmode-v2.png"} alt="Neotic Brand" width={96} height={96} className={`mb-6 drop-shadow-[0_0_15px_${isDarkMode ? 'rgba(168,85,247,0.5)' : 'rgba(59,130,246,0.5)'}] animate-pulse w-24 h-24 object-contain`} />
               <h1 className="text-4xl font-bold mb-3">Welcome to Neotic</h1>
               <p className={`text-lg ${theme.textSecondary} mb-12`}>Advanced reasoning core for systematic problem-solving.</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-2xl">
@@ -917,7 +917,7 @@ export default function NeoticMain() {
                 ) : (
                   <div className="space-y-6">
                     <div className="flex items-center gap-4">
-                      <Image src={isDarkMode ? "/neotic-minimalist-logo-darkmode-v2.png" : "/neotic-minimalist-logo-lightmode-v2.png"} alt="Neotic" width={48} height={48} unoptimized className="rounded-xl shadow-lg w-12 h-12 object-contain" />
+                      <img src={isDarkMode ? "/neotic-minimalist-logo-darkmode-v2.png" : "/neotic-minimalist-logo-lightmode-v2.png"} alt="Neotic" width={48} height={48} className="rounded-xl shadow-lg w-12 h-12 object-contain" />
                       <div>
                         <p className="font-bold text-lg">Neotic Core</p>
                         <p className={`text-xs ${theme.textSecondary}`}>Version 1.2.0 (Stable)</p>
