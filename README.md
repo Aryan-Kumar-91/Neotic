@@ -70,11 +70,23 @@ The Neotic engine orchestrates a low-latency pipeline between the user and the L
 
 A setup script is provided that installs all frontend and backend dependencies, creates the Python virtual environment, and validates your environment in one step.
 
+**macOS / Linux / WSL:**
+
 ```bash
 chmod +x setup.sh && ./setup.sh
 ```
 
+**Windows (PowerShell):**
+
+```powershell
+bash setup.sh
+```
+
+> Note: On Windows, `bash` is available via Git Bash or WSL. If you are using WSL, run the bash command above inside your WSL terminal.
+
 Once complete, configure your environment files (see Environment Variables below), then:
+
+**macOS / Linux / WSL:**
 
 ```bash
 # Start the frontend
@@ -82,6 +94,16 @@ pnpm dev
 
 # Start the backend (in a separate terminal)
 cd server && source .venv/bin/activate && python server.py
+```
+
+**Windows (PowerShell):**
+
+```powershell
+# Start the frontend
+pnpm dev
+
+# Start the backend (in a separate terminal)
+cd server; .venv\Scripts\activate; python server.py
 ```
 
 ### Manual Setup
