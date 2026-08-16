@@ -18,7 +18,7 @@ importers:
         specifier: ^12.11.2
         version: 12.11.2(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       firebase:
-        specifier: ^12.15.0
+        specifier: ^12.17.1
         version: 12.17.1
       lucide-react:
         specifier: ^1.31.0
