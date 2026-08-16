@@ -253,8 +253,6 @@ export default function NeoticMain() {
   const [mfaVerificationId, setMfaVerificationId] = useState("");
   const [mfaError, setMfaError] = useState<string | null>(null);
   const [animatedPlaceholder, setAnimatedPlaceholder] = useState("");
-  const [guestPromptCount, setGuestPromptCount] = useState(0);
-  const [showGuestModal, setShowGuestModal] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
@@ -351,8 +349,6 @@ export default function NeoticMain() {
       try {
         const t = localStorage.getItem("neotic_theme");
         if (t === "dark") setIsDarkMode(true);
-        const gc = localStorage.getItem("neotic_guest_prompts");
-        if (gc) setGuestPromptCount(parseInt(gc, 10));
         
         const prefsMatch = document.cookie.match(/(?:^|; )user_prefs=([^;]*)/);
         if (prefsMatch) {
@@ -539,18 +535,6 @@ export default function NeoticMain() {
   const submitPrompt = useCallback(async (text: string) => {
     if (!text.trim() || isGenerating) return;
 
-    if (!userEmail && process.env.NEXT_PUBLIC_DISABLE_AUTH !== "true") {
-      if (guestPromptCount >= 3) {
-        setShowGuestModal(true);
-        return;
-      }
-      setGuestPromptCount(prev => {
-        const next = prev + 1;
-        localStorage.setItem("neotic_guest_prompts", next.toString());
-        return next;
-      });
-    }
-
     abortControllerRef.current?.abort();
     const controller = new AbortController();
     abortControllerRef.current = controller;
@@ -607,7 +591,7 @@ export default function NeoticMain() {
     } finally {
       setIsGenerating(false);
     }
-  }, [messages, isGenerating, saveChatEnabled, currentChatId, userEmail, guestPromptCount, setChatHistory, updateChatInDb, userName, userInterests, autoSpeak, speakText]);
+  }, [messages, isGenerating, saveChatEnabled, currentChatId, userEmail, setChatHistory, updateChatInDb, userName, userInterests, autoSpeak, speakText]);
 
   const handleStop = () => {
     abortControllerRef.current?.abort();
@@ -706,7 +690,7 @@ export default function NeoticMain() {
           <div className="flex items-center gap-4">
             {!sidebarOpen && <button onClick={() => setSidebarOpen(true)} className={`p-2 rounded-lg ${theme.hoverBg}`}><Menu className="w-5 h-5" /></button>}
             <button onClick={handleNewChat} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-              <Image src={isDarkMode ? "/neotic-minimalist-logo-darkmode-v2.png" : "/neotic-minimalist-logo-lightmode-v2.png"} alt="Neotic Logo" width={32} height={32} priority className="rounded-lg shadow-lg w-8 h-auto" />
+              <Image src={isDarkMode ? "/neotic-minimalist-logo-darkmode-v2.png" : "/neotic-minimalist-logo-lightmode-v2.png"} alt="Neotic Logo" width={32} height={32} unoptimized priority className="rounded-lg shadow-lg w-8 h-8 object-contain" />
               <span className={`text-lg font-bold bg-clip-text text-transparent bg-linear-to-r ${theme.accentGradient}`}>Neotic</span>
             </button>
           </div>
@@ -745,7 +729,7 @@ export default function NeoticMain() {
         <div className="flex-1 overflow-y-auto w-full max-w-4xl mx-auto px-6 pb-60 custom-scrollbar pt-8">
           {messages.length === 0 ? (
             <div className="mt-32 flex flex-col items-center text-center">
-              <Image src={isDarkMode ? "/neotic-minimalist-logo-darkmode-v2.png" : "/neotic-minimalist-logo-lightmode-v2.png"} alt="Neotic Brand" width={96} height={96} priority className={`mb-6 drop-shadow-[0_0_15px_${isDarkMode ? 'rgba(168,85,247,0.5)' : 'rgba(59,130,246,0.5)'}] animate-pulse w-24 h-auto`} />
+              <Image src={isDarkMode ? "/neotic-minimalist-logo-darkmode-v2.png" : "/neotic-minimalist-logo-lightmode-v2.png"} alt="Neotic Brand" width={96} height={96} unoptimized priority className={`mb-6 drop-shadow-[0_0_15px_${isDarkMode ? 'rgba(168,85,247,0.5)' : 'rgba(59,130,246,0.5)'}] animate-pulse w-24 h-24 object-contain`} />
               <h1 className="text-4xl font-bold mb-3">Welcome to Neotic</h1>
               <p className={`text-lg ${theme.textSecondary} mb-12`}>Advanced reasoning core for systematic problem-solving.</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-2xl">
@@ -797,16 +781,7 @@ export default function NeoticMain() {
         </div>
       </main>
 
-      {showGuestModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-           <div className="absolute inset-0 bg-black/60" onClick={() => setShowGuestModal(false)} />
-           <div className={`relative w-full max-w-sm ${theme.bgModule} rounded-3xl p-8 z-50 shadow-2xl`}>
-              <h2 className="text-2xl font-bold mb-4">Reasoning Limit</h2>
-              <p className="mb-6 opacity-70">You&apos;ve reached your guest limit. Sign in to keep exploring.</p>
-              <Link href="/login" className={`block w-full py-3 ${theme.accentBg} text-white rounded-xl font-bold text-center`}>Sign In</Link>
-           </div>
-        </div>
-      )}
+
 
       {settingsOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => { setSettingsOpen(false); resetMfaState(); }}>
@@ -942,7 +917,7 @@ export default function NeoticMain() {
                 ) : (
                   <div className="space-y-6">
                     <div className="flex items-center gap-4">
-                      <Image src={isDarkMode ? "/neotic-minimalist-logo-darkmode-v2.png" : "/neotic-minimalist-logo-lightmode-v2.png"} alt="Neotic" width={48} height={48} className="rounded-xl shadow-lg" />
+                      <Image src={isDarkMode ? "/neotic-minimalist-logo-darkmode-v2.png" : "/neotic-minimalist-logo-lightmode-v2.png"} alt="Neotic" width={48} height={48} unoptimized className="rounded-xl shadow-lg w-12 h-12 object-contain" />
                       <div>
                         <p className="font-bold text-lg">Neotic Core</p>
                         <p className={`text-xs ${theme.textSecondary}`}>Version 1.2.0 (Stable)</p>

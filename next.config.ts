@@ -3,6 +3,9 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   output: "standalone",
   reactCompiler: true,
+  images: {
+    unoptimized: true,
+  },
 
   // Security headers on every response
   async headers() {

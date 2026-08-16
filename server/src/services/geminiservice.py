@@ -6,7 +6,13 @@ Chain-of-Thought responses.
 import base64
 import json
 import re
+import sys
 from typing import List, Optional
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 # pylint: disable=import-error
 import google.generativeai as google_genai
@@ -18,26 +24,45 @@ from src.rag.service import get_rag_context
 google_genai.configure(api_key=GOOGLE_API_KEY)  # pyright: ignore
 
 # [DYNAMIC MODEL SELECTION]
-# Auto-bind to the best available model that supports generateContent.
-# Prefer 'flash' models for speed.
-DEFAULT_MODEL_NAME = "models/gemini-2.0-flash"
-try:
-    list_models_fn = (
-        google_genai.list_models  # pyright: ignore[reportPrivateImportUsage]
-    )  # pyright: ignore[reportPrivateImportUsage]
-    for model_meta in list_models_fn():
-        if "generateContent" in model_meta.supported_generation_methods:
-            if "flash" in model_meta.name:
-                DEFAULT_MODEL_NAME = model_meta.name
-                break
-except Exception as list_error:  # pylint: disable=broad-except
-    print(f"WARNING: Failed to dynamically bind model: {list_error}")
+# Test candidate models for availability and bind to the best working model.
+CANDIDATE_MODELS = [
+    "gemini-flash-latest",
+    "models/gemini-flash-latest",
+    "models/gemini-2.0-flash",
+    "gemini-2.0-flash",
+    "models/gemini-1.5-flash",
+    "gemini-1.5-flash",
+    "models/gemini-pro-latest",
+    "gemini-pro-latest",
+]
 
-print(f"SUCCESS: Bound AI to model: {DEFAULT_MODEL_NAME}")
-# Enable Gemini's built-in Google Search capability
-AI_MODEL = google_genai.GenerativeModel(  # pyright: ignore[reportPrivateImportUsage]
-    model_name=DEFAULT_MODEL_NAME, tools=[{"google_search_retrieval": {}}]
-)
+DEFAULT_MODEL_NAME = "gemini-flash-latest"
+AI_MODEL = None
+
+for candidate in CANDIDATE_MODELS:
+    try:
+        test_model = google_genai.GenerativeModel(
+            model_name=candidate, tools=[{"google_search_retrieval": {}}]
+        )
+        test_model.generate_content("ping")
+        AI_MODEL = test_model
+        DEFAULT_MODEL_NAME = candidate
+        break
+    except Exception:
+        try:
+            test_model = google_genai.GenerativeModel(model_name=candidate)
+            test_model.generate_content("ping")
+            AI_MODEL = test_model
+            DEFAULT_MODEL_NAME = candidate
+            break
+        except Exception:
+            continue
+
+if not AI_MODEL:
+    DEFAULT_MODEL_NAME = "gemini-flash-latest"
+    AI_MODEL = google_genai.GenerativeModel(model_name=DEFAULT_MODEL_NAME)
+
+print(f"[OK] Bound AI to verified model: {DEFAULT_MODEL_NAME}")
 
 # ---------------------------------------------------------------------------
 # System instruction builder helpers
@@ -122,13 +147,13 @@ def _build_content_parts(
                 part = {"mime_type": f_mime, "data": f_bytes}
                 parts.append(part)  # pyright: ignore[reportArgumentType]
                 print(
-                    f"✓ Attached image: {f_data.name} "
+                    f"[OK] Attached image: {f_data.name} "
                     f"({f_mime}, {len(f_bytes)} bytes)"
                 )
             else:
                 _append_text_file(parts, f_data, f_bytes, f_mime)
         except Exception as file_err:  # pylint: disable=broad-except
-            print(f"⚠ Failed to process file {f_data.name}: {file_err}")
+            print(f"[WARN] Failed to process file {f_data.name}: {file_err}")
 
     return parts
 
@@ -146,13 +171,13 @@ def _append_text_file(
             f"\n\n--- Attached File: {f_data.name} ---\n"
             f"{text_val}\n--- End of {f_data.name} ---"
         )
-        print(f"✓ Attached text: {f_data.name} " f"({f_mime}, {len(text_val)} chars)")
+        print(f"[OK] Attached text: {f_data.name} " f"({f_mime}, {len(text_val)} chars)")
     except UnicodeDecodeError:
         parts[0] += (
             f"\n\n[Binary file attached: {f_data.name} "
             f"({f_mime}, {len(f_bytes)} bytes) - cannot display content]"
         )
-        print(f"⚠ Binary file (not readable): {f_data.name} ({f_mime})")
+        print(f"[WARN] Binary file (not readable): {f_data.name} ({f_mime})")
 
 
 def _inject_rag_thought(data: dict, library_sources: list) -> dict:
@@ -208,19 +233,19 @@ def generate_thoughts(
     rag_context: Optional[str] = None
 
     if rag_data:
-        print(f"🔍 Searching local library for: {prompt[:50]}...")
+        print(f"[INFO] Searching local library for: {prompt[:50]}...")
         rag_context = rag_data["context"]
         library_sources = rag_data["sources"]
         if rag_context:
-            print(f"✓ Found RAG context from {len(library_sources)} sources")
+            print(f"[OK] Found RAG context from {len(library_sources)} sources")
 
     system_instr = _build_system_instr(user_prefs, files, rag_context)
     full_prompt = f"{system_instr}\n\nUser Question: {prompt}"
     content_parts = _build_content_parts(full_prompt, files)
 
-    print(f"→ Sending {len(content_parts)} part(s) to Gemini...")
+    print(f"-> Sending {len(content_parts)} part(s) to Gemini...")
     response = AI_MODEL.generate_content(content_parts)
-    print(f"✓ AI Response received for: {prompt[:30]}...")
+    print(f"[OK] AI Response received for: {prompt[:30]}...")
 
     data = _parse_response(response.text)
 

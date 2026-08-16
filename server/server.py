@@ -4,7 +4,14 @@ Neotic Backend Core - Main entry point for the FastAPI server.
 
 # pylint: disable=import-error
 import os
+import sys
 import uvicorn
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 from fastapi import FastAPI, WebSocket
 from src.middlewares.cors import setup_cors
 from src.routes.chatroutes import ROUTER as chat_router
@@ -44,7 +51,7 @@ if __name__ == "__main__":
     USE_SSL = False
 
     if USE_SSL:
-        print("✓ SSL DETECTED: Running backend on https://127.0.0.1:8001")
+        print("[OK] SSL DETECTED: Running backend on https://127.0.0.1:8001")
         uvicorn.run(
             "server:APP",
             host="127.0.0.1",
@@ -54,8 +61,5 @@ if __name__ == "__main__":
             ssl_keyfile=KEY_FILE,
         )
     else:
-        print("⚠ SSL NOT FOUND: Running backend on http://0.0.0.0:8001")
-        print(
-            "To enable SSL, start the frontend first with 'npm run dev' to generate certs."
-        )
+        print("[INFO] Running backend on http://0.0.0.0:8001")
         uvicorn.run("server:APP", host="0.0.0.0", port=8001, reload=True)
