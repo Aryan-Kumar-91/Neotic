@@ -70,11 +70,19 @@ The Neotic engine orchestrates a low-latency pipeline between the user and the L
 
 ### Option 1: Linux / macOS / WSL (Bash)
 
-#### 1. Automated Setup (Recommended)
-Run the setup script from the project root to install all dependencies and initialize the Python virtual environment:
+#### 1. Install Dependencies & Setup Virtual Environment
+Run the following commands in Bash from the project root:
 
 ```bash
-chmod +x setup.sh && ./setup.sh
+# Install frontend dependencies
+pnpm install
+
+# Setup Python backend virtual environment
+cd server
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+cd ..
 ```
 
 #### 2. Configure Environment

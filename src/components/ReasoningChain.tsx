@@ -6,7 +6,7 @@ import {
   Image as ImageIcon, X, Sparkles, Lightbulb, ScanSearch, Layers, Waypoints, Library
 } from 'lucide-react';
 
-// ─── Stage Naming & Color Palette ────────────────────────────────────────────
+// â”€â”€â”€ Stage Naming & Color Palette â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Each stage gets a unique descriptive name and a bright, comfortable color pair
 const STAGE_PALETTE = [
   { name: 'Decomposition', icon: Layers,      bg: 'bg-sky-400/25',     border: 'border-sky-400/40',     text: 'text-sky-300',     dot: 'bg-sky-400' },
@@ -33,7 +33,7 @@ function getStage(index: number, stepName?: string) {
   return STAGE_PALETTE[index % STAGE_PALETTE.length];
 }
 
-// ─── Custom Bubble Node ──────────────────────────────────────────────────────
+// â”€â”€â”€ Custom Bubble Node â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function CustomNode({ data }: { data: any }) { // eslint-disable-line @typescript-eslint/no-explicit-any
   const Icon = data.icon;
   const isActive = data.isActive;
@@ -68,7 +68,7 @@ function CustomNode({ data }: { data: any }) { // eslint-disable-line @typescrip
           <Icon className="w-5 h-5 drop-shadow-sm" />
         ) : (
           <span className="font-bold text-[15px] drop-shadow-sm">
-            {data.nodeIndex !== undefined ? data.nodeIndex : '·'}
+            {data.nodeIndex !== undefined ? data.nodeIndex : 'Â·'}
           </span>
         )}
       </div>
@@ -99,7 +99,7 @@ function CustomNode({ data }: { data: any }) { // eslint-disable-line @typescrip
 
 const nodeTypes = { custom: CustomNode };
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 interface SelectedInfo {
   index: number;
   label: string;
@@ -121,7 +121,7 @@ interface Thought {
   is_reflection?: boolean;
 }
 
-// ─── Main Component ──────────────────────────────────────────────────────────
+// â”€â”€â”€ Main Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export default function ReasoningChain({ thoughts, isGenerating }: { thoughts: Thought[], isGenerating?: boolean }) {
   const [showIcons, setShowIcons] = useState(true);
   const [selected, setSelected] = useState<SelectedInfo | null>(null);
@@ -139,7 +139,7 @@ export default function ReasoningChain({ thoughts, isGenerating }: { thoughts: T
     const endX = Math.max(700, startX + thoughts.length * 160 + 160);
     const centerY = 150;
 
-    // ── Input Node ──
+    // â”€â”€ Input Node â”€â”€
     const inputContent = `Received the user query and initialized the reasoning pipeline. The model deconstructed the prompt into ${thoughts.length} analytical phase${thoughts.length !== 1 ? 's' : ''} to systematically arrive at a comprehensive answer.`;
     newNodes.push({
       id: 'input',
@@ -156,7 +156,7 @@ export default function ReasoningChain({ thoughts, isGenerating }: { thoughts: T
 
     let prevId = 'input';
 
-    // ── Thought Nodes ──
+    // â”€â”€ Thought Nodes â”€â”€
     thoughts.forEach((thought, index) => {
       const stage = getStage(index, thought.step);
       const id = `thought-${index}`;
@@ -172,10 +172,11 @@ export default function ReasoningChain({ thoughts, isGenerating }: { thoughts: T
       
       // Confidence-based coloring
       const conf = thought.confidence ?? 0.8;
-      let confColor = 'border-white/20';
-      if (conf >= 0.9) confColor = 'border-emerald-400/60';
-      else if (conf < 0.6) confColor = 'border-rose-400/60';
-      else confColor = 'border-amber-400/60';
+      const confColor = conf >= 0.9
+        ? 'border-emerald-400/60'
+        : conf < 0.6
+          ? 'border-rose-400/60'
+          : 'border-amber-400/60';
 
       newNodes.push({
         id,
@@ -214,7 +215,7 @@ export default function ReasoningChain({ thoughts, isGenerating }: { thoughts: T
       prevId = id;
     });
 
-    // ── Response Node ──
+    // â”€â”€ Response Node â”€â”€
     const responseContent = isGenerating
       ? `Awaiting completion of all ${thoughts.length} reasoning phases before synthesizing the final answer.`
       : `Successfully synthesized insights from ${thoughts.length} reasoning phase${thoughts.length !== 1 ? 's' : ''} into a unified, coherent response. The chain-of-thought trace is now complete.`;
@@ -256,7 +257,7 @@ export default function ReasoningChain({ thoughts, isGenerating }: { thoughts: T
     <div
       className="w-full h-[380px] bg-[#0A0A0B] rounded-2xl border border-[#1A1A1C] overflow-hidden mb-6 mt-2 relative z-0 isolate"
     >
-      {/* ── Top Bar ── */}
+      {/* â”€â”€ Top Bar â”€â”€ */}
       <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-5 py-3 z-10 border-b border-[#1A1A1C] bg-[#0A0A0B]/90 backdrop-blur-md">
         <div className="flex items-center gap-2.5">
           <div className={`w-2 h-2 rounded-full ${currentStage ? currentStage.dot : 'bg-emerald-400'} ${isGenerating ? 'animate-pulse' : ''}`} />
@@ -281,7 +282,7 @@ export default function ReasoningChain({ thoughts, isGenerating }: { thoughts: T
         </div>
       </div>
 
-      {/* ── Graph — preventScrolling prevents React Flow from hijacking page scroll ── */}
+      {/* â”€â”€ Graph â€” preventScrolling prevents React Flow from hijacking page scroll â”€â”€ */}
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -300,7 +301,7 @@ export default function ReasoningChain({ thoughts, isGenerating }: { thoughts: T
         <Background color="#161618" gap={28} size={1} />
       </ReactFlow>
 
-      {/* ── Click-to-reveal Info Panel ── */}
+      {/* â”€â”€ Click-to-reveal Info Panel â”€â”€ */}
       {selected && (
         <div className="absolute bottom-5 left-1/2 -translate-x-1/2 w-[88%] max-w-xl bg-[#141416]/90 backdrop-blur-xl border border-[#2A2A2C] p-4 rounded-xl z-30 shadow-2xl transition-all duration-300 animate-in slide-in-from-bottom-4 fade-in">
           <div className="flex items-start gap-3">
@@ -336,7 +337,7 @@ export default function ReasoningChain({ thoughts, isGenerating }: { thoughts: T
         </div>
       )}
 
-      {/* ── Active Phase Indicator ── */}
+      {/* â”€â”€ Active Phase Indicator â”€â”€ */}
       {currentPhase && !selected && (
         <div className="absolute bottom-5 left-1/2 -translate-x-1/2 w-[88%] max-w-xl bg-[#141416]/90 backdrop-blur-xl border border-white/10 p-4 rounded-xl z-20 shadow-2xl transition-all duration-500 animate-in slide-in-from-bottom-4 fade-in">
           <div className="flex items-start gap-3">
@@ -345,7 +346,7 @@ export default function ReasoningChain({ thoughts, isGenerating }: { thoughts: T
             </div>
             <div className="flex flex-col gap-1 overflow-hidden">
               <h3 className="text-white/90 font-semibold text-sm">
-                Phase {currentPhaseIndex} — <span className={currentStage?.text || 'text-blue-300'}>{currentStage?.name || currentPhase.step}</span>
+                Phase {currentPhaseIndex} â€” <span className={currentStage?.text || 'text-blue-300'}>{currentStage?.name || currentPhase.step}</span>
               </h3>
               <p className="text-[#777] text-[13px] leading-relaxed line-clamp-2">{currentPhase.content}</p>
             </div>

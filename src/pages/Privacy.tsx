@@ -1,5 +1,5 @@
 import React from "react";
-import Link from "next/link";
+import { Link } from "react-router-dom";
 import { ArrowLeft, Shield } from "lucide-react";
 
 export const metadata = {
@@ -12,7 +12,7 @@ export default function PrivacyPage() {
     <div className="flex flex-col min-h-screen bg-white text-slate-900 font-sans antialiased selection:bg-blue-500/30">
       <header className="px-6 py-4 border-b border-slate-200 sticky top-0 bg-white/80 backdrop-blur-md z-10 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link href="/" className="p-2 rounded-md hover:bg-slate-100 transition-colors mr-2">
+          <Link to="/" className="p-2 rounded-md hover:bg-slate-100 transition-colors mr-2">
             <ArrowLeft className="w-5 h-5 text-slate-600" />
           </Link>
           <div className="flex items-center text-lg font-semibold text-slate-900">

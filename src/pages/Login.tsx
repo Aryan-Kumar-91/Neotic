@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { useNavigate, Link } from "react-router-dom";
+
 import { auth, db, googleProvider, githubProvider } from "@/lib/firebase";
 import {
   signInWithEmailAndPassword,
@@ -34,10 +34,10 @@ import {
   Moon,
   ShieldCheck,
 } from "lucide-react";
-import StarBackground from "../../components/StarBackground";
+import StarBackground from "../components/StarBackground";
 
 export default function LoginPage() {
-  const router = useRouter();
+  const router = useNavigate();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -65,7 +65,7 @@ export default function LoginPage() {
       try {
         const t = localStorage.getItem("noetic_theme");
         if (t === "dark") setIsDarkMode(true);
-      } catch {}
+      } catch { /* Ignore unavailable local storage. */ }
       setIsLoaded(true);
     }, 0);
   }, []);
@@ -73,7 +73,7 @@ export default function LoginPage() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user && !showMfa) {
-        router.push("/");
+        router("/");
       }
     });
     return () => unsubscribe();
@@ -92,7 +92,7 @@ export default function LoginPage() {
 
   // Auth Handlers
   const handleGoogleSignIn = async () => {
-    if (process.env.NEXT_PUBLIC_DISABLE_AUTH === "true") {
+    if (import.meta.env.VITE_DISABLE_AUTH === "true") {
       setError("Firebase Auth is bypassed. Please go to the homepage and use Neotic instantly as a Guest. No account needed!");
       return;
     }
@@ -100,7 +100,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await signInWithPopup(auth, googleProvider);
-      router.push("/");
+      router("/");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Google sign-in failed.");
     } finally {
@@ -109,7 +109,7 @@ export default function LoginPage() {
   };
 
   const handleGithubSignIn = async () => {
-    if (process.env.NEXT_PUBLIC_DISABLE_AUTH === "true") {
+    if (import.meta.env.VITE_DISABLE_AUTH === "true") {
       setError("Firebase Auth is bypassed. Please go to the homepage and use Neotic instantly as a Guest. No account needed!");
       return;
     }
@@ -117,7 +117,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await signInWithPopup(auth, githubProvider);
-      router.push("/");
+      router("/");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "GitHub sign-in failed.");
     } finally {
@@ -134,7 +134,7 @@ export default function LoginPage() {
       const cred = PhoneAuthProvider.credential(verificationId, otp);
       const mfaAssertion = PhoneMultiFactorGenerator.assertion(cred);
       await mfaResolver.resolveSignIn(mfaAssertion);
-      router.push("/");
+      router("/");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Invalid verification code.");
     } finally {
@@ -144,7 +144,7 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (process.env.NEXT_PUBLIC_DISABLE_AUTH === "true") {
+    if (import.meta.env.VITE_DISABLE_AUTH === "true") {
       setError("Firebase Auth is bypassed for local sessions. Please go to the homepage and use Neotic instantly as a Guest. No account needed!");
       return;
     }
@@ -154,7 +154,7 @@ export default function LoginPage() {
     try {
       if (mode === "signin") {
         await signInWithEmailAndPassword(auth, email, password);
-        router.push("/");
+        router("/");
       } else {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
@@ -163,7 +163,7 @@ export default function LoginPage() {
           fullName, dateOfBirth: dob, phoneNumber: phone, email,
           createdAt: new Date().toISOString(),
         });
-        router.push("/");
+        router("/");
       }
     } catch (err: unknown) {
       const authErr = err as AuthError;
@@ -214,7 +214,7 @@ export default function LoginPage() {
           
           {/* Logo & Header */}
           <div className="flex flex-col items-center mb-8">
-            <Link href="/" className="flex flex-col items-center group hover:opacity-80 transition-opacity">
+            <Link to="/" className="flex flex-col items-center group hover:opacity-80 transition-opacity">
               <div className="w-12 h-12 rounded-xl bg-linear-to-br from-blue-500 to-indigo-600 flex items-center justify-center mb-4 shadow-lg shadow-blue-500/25 group-hover:scale-105 transition-transform">
                 <Brain className="w-6 h-6 text-white" />
               </div>
