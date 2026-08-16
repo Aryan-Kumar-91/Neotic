@@ -60,34 +60,48 @@ The Neotic engine orchestrates a low-latency pipeline between the user and the L
 
 ### Prerequisites
 
-- **Node.js** (v20 or newer)
-- **Python** (v3.10 or newer)
+- **Node.js** v22.x — [nodejs.org](https://nodejs.org)
+- **pnpm** v11.x — installed automatically via corepack if missing
+- **Python** 3.10 or newer — [python.org](https://www.python.org)
 - **Firebase Project** (for Auth & Realtime Sync)
 - **Google AI Studio API Key** (Gemini)
 
-### 1. Backend Setup
+### Automated Setup (Recommended)
+
+A setup script is provided that installs all frontend and backend dependencies, creates the Python virtual environment, and validates your environment in one step.
 
 ```bash
-# Navigate to backend
+chmod +x setup.sh && ./setup.sh
+```
+
+Once complete, configure your environment files (see Environment Variables below), then:
+
+```bash
+# Start the frontend
+pnpm dev
+
+# Start the backend (in a separate terminal)
+cd server && source .venv/bin/activate && python server.py
+```
+
+### Manual Setup
+
+**Backend:**
+
+```bash
 cd server
-
-# Install dependencies
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
-
-# Configure your .env (refer to Environment Variables)
-# Start the server
 python server.py
 # Backend listening on http://127.0.0.1:8001
 ```
 
-### 2. Frontend Setup
+**Frontend:**
 
 ```bash
-# In the root project directory
-npm install
-
-# Configure your .env.local
-npm run dev
+pnpm install
+pnpm dev
 # Frontend running on http://localhost:3000
 ```
 
