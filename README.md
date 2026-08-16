@@ -61,83 +61,80 @@ The Neotic engine orchestrates a low-latency pipeline between the user and the L
 ### Prerequisites
 
 - **Node.js** v22.x — [nodejs.org](https://nodejs.org)
-- **pnpm** v11.x — installed automatically via corepack if missing
+- **pnpm** v11.x — installed automatically via corepack or `npm i -g pnpm`
 - **Python** 3.10 or newer — [python.org](https://www.python.org)
-- **Firebase Project** (for Auth & Realtime Sync)
-- **Google AI Studio API Key** (Gemini)
+- **Firebase Project** (for Authentication & Session Sync)
+- **Google AI Studio API Key** (Gemini 2.0 Flash)
 
-### Automated Setup (Recommended)
+---
 
-A setup script is provided that installs all frontend and backend dependencies, creates the Python virtual environment, and validates your environment in one step.
+### Option 1: Linux / macOS / WSL (Bash)
 
-**macOS / Linux / WSL:**
+#### 1. Automated Setup (Recommended)
+Run the setup script from the project root to install all dependencies and initialize the Python virtual environment:
 
 ```bash
 chmod +x setup.sh && ./setup.sh
 ```
 
-**Windows (PowerShell):**
-
-```powershell
-bash setup.sh
-```
-
-> Note: On Windows, `bash` is available via Git Bash or WSL. If you are using WSL, run the bash command above inside your WSL terminal.
-
-Once complete, configure your environment files (see Environment Variables below), then:
-
-**macOS / Linux / WSL:**
-
+#### 2. Configure Environment
 ```bash
-# Start the frontend
+cp .env.example .env.local
+cp .env.example server/.env
+```
+> Open both `.env.local` and `server/.env` and add your **Google AI Studio Key** and **Firebase Configuration Keys**.
+
+#### 3. Start Development Servers
+```bash
+# Terminal 1 — Start Frontend:
 pnpm dev
 
-# Start the backend (in a separate terminal)
-cd server && source .venv/bin/activate && python server.py
-```
-
-**Windows (PowerShell):**
-
-```powershell
-# Start the frontend
-pnpm dev
-
-# Start the backend (in a separate terminal)
-cd server; .venv\Scripts\activate; python server.py
-```
-
-### Manual Setup
-
-**Backend:**
-
-```bash
+# Terminal 2 — Start Backend:
 cd server
-python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
 python server.py
-# Backend listening on http://127.0.0.1:8001
 ```
-
-**Frontend:**
-
-```bash
-pnpm install
-pnpm dev
-# Frontend running on http://localhost:3000
-```
+- Frontend: `http://localhost:3000`
+- Backend: `http://localhost:8001`
 
 ---
 
-All environment variables have been consolidated into a master template to simplify onboarding!
+### Option 2: Windows (PowerShell)
 
-### Setup Instructions
+#### 1. Install Dependencies & Setup Virtual Environment
+Run the following commands in PowerShell from the project root:
 
-1. Locate the `.env.example` file in the main project folder.
-2. Duplicate this file twice:
-   - Rename one copy to `.env.local` and keep it in the root folder.
-   - Move the other copy into the `/server` folder and rename it exactly to `.env`
-3. Fill in your **Google AI Studio Key** and **Firebase Configuration Keys** inside both files.
+```powershell
+# Install frontend dependencies
+pnpm install
+
+# Setup Python backend virtual environment
+cd server
+python -m venv .venv
+.\.venv\Scripts\activate
+pip install -r requirements.txt
+cd ..
+```
+
+#### 2. Configure Environment
+```powershell
+Copy-Item .env.example .env.local
+Copy-Item .env.example server\.env
+```
+> Open `.env.local` and `server/.env` and fill in your **Google AI Studio Key** and **Firebase Configuration Keys**.
+
+#### 3. Start Development Servers
+```powershell
+# Terminal 1 (PowerShell) — Start Frontend:
+pnpm dev
+
+# Terminal 2 (PowerShell) — Start Backend:
+cd server
+.\.venv\Scripts\activate
+python server.py
+```
+- Frontend: `http://localhost:3000`
+- Backend: `http://localhost:8001`
 
 ---
 
