@@ -110,7 +110,9 @@ if [ ! -d ".venv" ]; then
 fi
 
 # Activate venv
-source .venv/bin/activate
+# shellcheck source=/dev/null
+# shellcheck disable=SC1091
+source .venv/bin/activate 2>/dev/null || source .venv/Scripts/activate 2>/dev/null || true
 
 log "Installing Python dependencies..."
 pip install --upgrade pip --quiet
