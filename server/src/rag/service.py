@@ -136,7 +136,10 @@ def get_rag_context(query: str):
         model="models/text-embedding-004",
         google_api_key=GOOGLE_API_KEY,  # pyright: ignore[reportCallIssue]
     )
-    if not os.path.exists(PERSIST_DIR):
+    if not os.path.exists(PERSIST_DIR) or not os.listdir(PERSIST_DIR):
+        initialize_gemini_rag()
+
+    if not os.path.exists(PERSIST_DIR) or not os.listdir(PERSIST_DIR):
         return None
 
     vectorstore = Chroma(persist_directory=PERSIST_DIR, embedding_function=embeddings)

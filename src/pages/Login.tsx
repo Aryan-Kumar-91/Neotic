@@ -63,7 +63,7 @@ export default function LoginPage() {
   useEffect(() => {
     setTimeout(() => {
       try {
-        const t = localStorage.getItem("noetic_theme");
+        const t = localStorage.getItem("neotic_theme");
         if (t === "dark") setIsDarkMode(true);
       } catch { /* Ignore unavailable local storage. */ }
       setIsLoaded(true);
@@ -81,7 +81,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (isLoaded)
-      localStorage.setItem("noetic_theme", isDarkMode ? "dark" : "light");
+      localStorage.setItem("neotic_theme", isDarkMode ? "dark" : "light");
   }, [isDarkMode, isLoaded]);
 
   const resetExtraFields = () => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { db } from "@/lib/firebase";
 import { 
   collection, 
@@ -31,6 +31,7 @@ function pickColor(email: string): string {
 export function useCollabRoom(roomId: string, userEmail: string | null) {
   const [onlineUsers, setOnlineUsers] = useState<CollabUser[]>([]);
   const [incomingMessage, setIncomingMessage] = useState<Message | null>(null);
+  const messageListenerInitialized = useRef(false);
 
   // 1. Sync Online Users (Presence)
   useEffect(() => {
@@ -68,24 +69,30 @@ export function useCollabRoom(roomId: string, userEmail: string | null) {
 
   // 2. Sync Messages (Broadcast)
   useEffect(() => {
+    messageListenerInitialized.current = false;
     if (!roomId) return;
 
     const messagesRef = collection(db, "rooms", roomId, "messages");
     const q = query(messagesRef, orderBy("timestamp", "desc"), limit(1));
 
-    // Listen only for NEW messages
+    // Ignore the initial snapshot so joining a room does not replay its last message.
     const unsubscribe = onSnapshot(q, (snapshot) => {
+      if (!messageListenerInitialized.current) {
+        messageListenerInitialized.current = true;
+        return;
+      }
+
       snapshot.docChanges().forEach((change) => {
-        if (change.type === "added") {
-          const data = change.doc.data();
-          // Filter out our own heartbeat/initial load if desired, but here we just pass it on
-          setIncomingMessage(data as Message);
-        }
+        if (change.type !== "added") return;
+        const data = change.doc.data() as Message;
+        // The sender already appends its local message; only peers should receive it.
+        if (data.sender && data.sender === userEmail) return;
+        setIncomingMessage(data);
       });
     });
 
     return () => unsubscribe();
-  }, [roomId]);
+  }, [roomId, userEmail]);
 
   // Broadcast a message to all peers
   const broadcastMessage = useCallback(
