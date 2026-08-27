@@ -223,7 +223,7 @@ export default function NeoticMain() {
     chatHistory, setChatHistory, 
     saveChatEnabled, 
     activeFolder,
-    customInstructions, setCustomInstructions,
+    customInstructions, 
     isLoaded, setIsLoaded,
     updateChatInDb
   } = useChatState();
@@ -235,7 +235,6 @@ export default function NeoticMain() {
   const [userName, setUserName] = useState("");
   const [userInterests, setUserInterests] = useState("");
   const [prefsSaved, setPrefsSaved] = useState(false);
-  const [instructionsSaved, setInstructionsSaved] = useState(false);
   
   const [libraryFiles, setLibraryFiles] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
@@ -367,12 +366,6 @@ export default function NeoticMain() {
     document.cookie = `user_prefs=${encodeURIComponent(JSON.stringify(prefs))}; path=/; max-age=31536000`; // 1 year expiry
     setPrefsSaved(true);
     setTimeout(() => setPrefsSaved(false), 2000);
-  };
-
-  const saveCustomInstructions = () => {
-    setCustomInstructions(customInstructions.trim());
-    setInstructionsSaved(true);
-    setTimeout(() => setInstructionsSaved(false), 2000);
   };
 
   const fetchLibrary = async () => {
@@ -552,11 +545,7 @@ export default function NeoticMain() {
     setIsGenerating(true);
 
     try {
-      const userPrefs = {
-        name: userName,
-        interests: userInterests,
-        customInstructions,
-      };
+      const userPrefs = { name: userName, interests: userInterests };
       const data = await sendPromptToAgent(text, controller, undefined, userPrefs);
       const responseMessage: Message = { 
         role: "assistant", 
@@ -602,7 +591,7 @@ export default function NeoticMain() {
     } finally {
       setIsGenerating(false);
     }
-  }, [messages, isGenerating, saveChatEnabled, currentChatId, userEmail, setChatHistory, updateChatInDb, userName, userInterests, customInstructions, autoSpeak, speakText]);
+  }, [messages, isGenerating, saveChatEnabled, currentChatId, userEmail, setChatHistory, updateChatInDb, userName, userInterests, autoSpeak, speakText]);
 
   const handleStop = () => {
     abortControllerRef.current?.abort();
@@ -918,20 +907,7 @@ export default function NeoticMain() {
                 ) : settingsTab === "instructions" ? (
                   <div className="space-y-4">
                     <p className={`text-sm ${theme.textSecondary}`}>Provide custom instructions for the Reasoning Core to follow in every session.</p>
-                    <textarea
-                      rows={6}
-                      value={customInstructions}
-                      onChange={(e) => setCustomInstructions(e.target.value)}
-                      className={`w-full p-4 rounded-xl border ${theme.borderMain} ${theme.bgSidebar} outline-none ${theme.borderFocus} text-sm resize-none`}
-                      placeholder="e.g. Always explain mathematical steps in detail..."
-                      maxLength={2000}
-                    />
-                    <div className="flex items-center justify-between gap-3">
-                      <span className={`text-xs ${theme.textMuted}`}>{customInstructions.length}/2000</span>
-                      <button onClick={saveCustomInstructions} className={`px-4 py-2 rounded-xl ${theme.accentBg} text-white font-bold text-sm shadow-lg ${theme.accentShadow} transition-all active:scale-[0.98] flex items-center gap-2`}>
-                        {instructionsSaved ? <><Check className="w-4 h-4" /> Saved</> : "Save Instructions"}
-                      </button>
-                    </div>
+                    <textarea rows={6} className={`w-full p-4 rounded-xl border ${theme.borderMain} ${theme.bgSidebar} outline-none ${theme.borderFocus} text-sm resize-none`} placeholder="e.g. Always explain mathematical steps in detail..." defaultValue={customInstructions} />
                   </div>
                 ) : settingsTab === "bin" ? (
                   <div className="flex flex-col items-center justify-center h-48 text-center opacity-40">

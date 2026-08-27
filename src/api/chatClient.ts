@@ -28,17 +28,11 @@ export interface Citation {
   verification_status: "verified" | "unverified";
 }
 
-export interface UserPreferences {
-  name: string;
-  interests: string;
-  customInstructions?: string;
-}
-
 export async function sendPromptToAgent(
   input: string,
   abortController: AbortController,
   attachments?: File[],
-  userPrefs?: UserPreferences
+  userPrefs?: { name: string; interests: string }
 ): Promise<{ thoughts: Thought[]; final_answer: string; citations: Citation[] }> {
   
   // Build attachment payloads

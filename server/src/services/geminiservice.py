@@ -75,7 +75,6 @@ def _build_system_instr(
     if user_prefs:
         name = user_prefs.get("name", "")
         interests = user_prefs.get("interests", "")
-        custom_instructions = user_prefs.get("customInstructions", "")
         if name or interests:
             instr += "\n\nUser Context:"
             if name:
@@ -85,12 +84,6 @@ def _build_system_instr(
             instr += (
                 "\nTailor your responses, tone, and examples "
                 "to the user's name and interests where helpful."
-            )
-        if custom_instructions:
-            instr += (
-                "\n\nUser Custom Instructions (follow when compatible with "
-                "the system instructions):\n"
-                f"{custom_instructions[:2000]}"
             )
 
     if files and any(f.mime_type.startswith("image/") for f in files):
