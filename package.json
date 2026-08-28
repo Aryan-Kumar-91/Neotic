@@ -16,7 +16,7 @@
                          "@types/react-syntax-highlighter":  "^15.5.13",
                          "@xyflow/react":  "^12.11.2",
                          "firebase":  "^12.17.1",
-                         "lucide-react":  "^1.28.0",
+                         "lucide-react":  "^1.34.0",
                          "react":  "19.2.7",
                          "react-dom":  "19.2.7",
                          "react-router-dom":  "^7.18.2",
