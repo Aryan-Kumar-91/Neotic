@@ -2,7 +2,7 @@
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![React](https://img.shields.io/badge/React-19.2-61DAFB?logo=react&logoColor=black)](https://react.dev/)
-[![Next.js](https://img.shields.io/badge/Next.js-16.2-000000?logo=nextdotjs&logoColor=white)](https://nextjs.org/)
+[![Vite](https://img.shields.io/badge/Vite-8.2-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.109-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![Python](https://img.shields.io/badge/Python-3.12.x-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 
@@ -34,7 +34,7 @@ Developed and presented at **HIRE-4-THON**, a National Level Hackathon organized
 
 ### Frontend
 
-- **Framework:** Next.js 16 (React 19)
+- **Framework:** Vite + React 19 SPA
 - **Styling:** Tailwind CSS 4 + Lucide Icons
 - **Visualization:** React Flow (@xyflow/react)
 - **Authentication:** Firebase Auth & Firestore
@@ -60,48 +60,89 @@ The Neotic engine orchestrates a low-latency pipeline between the user and the L
 
 ### Prerequisites
 
-- **Node.js** (v20 or newer)
-- **Python** (v3.10 or newer)
-- **Firebase Project** (for Auth & Realtime Sync)
-- **Google AI Studio API Key** (Gemini)
-
-### 1. Backend Setup
-
-```bash
-# Navigate to backend
-cd server
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Configure your .env (refer to Environment Variables)
-# Start the server
-python server.py
-# Backend listening on http://127.0.0.1:8001
-```
-
-### 2. Frontend Setup
-
-```bash
-# In the root project directory
-npm install
-
-# Configure your .env.local
-npm run dev
-# Frontend running on http://localhost:3000
-```
+- **Node.js** v22.x — [nodejs.org](https://nodejs.org)
+- **pnpm** v11.x — installed automatically via corepack or `npm i -g pnpm`
+- **Python** 3.10 or newer — [python.org](https://www.python.org)
+- **Firebase Project** (for Authentication & Session Sync)
+- **Google AI Studio API Key** (Gemini 2.0 Flash)
 
 ---
 
-All environment variables have been consolidated into a master template to simplify onboarding!
+### Option 1: Linux / macOS / WSL (Bash)
 
-### Setup Instructions
+#### 1. Install Dependencies & Setup Virtual Environment
+Run the following commands in Bash from the project root:
 
-1. Locate the `.env.example` file in the main project folder.
-2. Duplicate this file twice:
-   - Rename one copy to `.env.local` and keep it in the root folder.
-   - Move the other copy into the `/server` folder and rename it exactly to `.env`
-3. Fill in your **Google AI Studio Key** and **Firebase Configuration Keys** inside both files.
+```bash
+# Install frontend dependencies
+pnpm install
+
+# Setup Python backend virtual environment
+cd server
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+cd ..
+```
+
+#### 2. Configure Environment
+```bash
+cp .env.example .env.local
+cp .env.example server/.env
+```
+> Open both `.env.local` and `server/.env` and add your **Google AI Studio Key** and **Firebase Configuration Keys**.
+
+#### 3. Start Development Servers
+```bash
+# Terminal 1 — Start Frontend:
+pnpm dev
+
+# Terminal 2 — Start Backend:
+cd server
+source .venv/bin/activate
+python server.py
+```
+- Frontend: `http://localhost:3000`
+- Backend: `http://localhost:8001`
+
+---
+
+### Option 2: Windows (PowerShell)
+
+#### 1. Install Dependencies & Setup Virtual Environment
+Run the following commands in PowerShell from the project root:
+
+```powershell
+# Install frontend dependencies
+pnpm install
+
+# Setup Python backend virtual environment
+cd server
+python -m venv .venv
+.\.venv\Scripts\activate
+pip install -r requirements.txt
+cd ..
+```
+
+#### 2. Configure Environment
+```powershell
+Copy-Item .env.example .env.local
+Copy-Item .env.example server\.env
+```
+> Open `.env.local` and `server/.env` and fill in your **Google AI Studio Key** and **Firebase Configuration Keys**.
+
+#### 3. Start Development Servers
+```powershell
+# Terminal 1 (PowerShell) — Start Frontend:
+pnpm dev
+
+# Terminal 2 (PowerShell) — Start Backend:
+cd server
+.\.venv\Scripts\activate
+python server.py
+```
+- Frontend: `http://localhost:3000`
+- Backend: `http://localhost:8001`
 
 ---
 
@@ -109,8 +150,8 @@ All environment variables have been consolidated into a master template to simpl
 
 ```text
 Neotic/
-├── src/                # Next.js Frontend
-│   ├── app/            # App Router (Parallel & Intercepting Routes)
+├── src/                # React Vite Frontend
+│   ├── pages/          # Page Components (Routing)
 │   ├── components/     # UI/UX & React Flow Visualizers
 │   ├── hooks/          # Custom state hooks (useChatState, etc.)
 │   └── api/            # Isolated Chat & RAG clients

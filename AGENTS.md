@@ -1,5 +1,7 @@
-<!-- BEGIN:nextjs-agent-rules -->
-# This is NOT the Next.js you know
-
-This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
-<!-- END:nextjs-agent-rules -->
+﻿<!-- BEGIN:react-vite-agent-rules -->
+# This frontend uses Vite and React Router.
+## Frontend conventions
+- Use Vite entry points in `src/main.tsx` and route definitions in `src/App.tsx`.
+- Use `react-router-dom` for navigation and `import.meta.env.VITE_*` for browser environment variables.
+- Keep backend integration and server-side Python code under `server/` separate from the client bundle.
+<!-- END:react-vite-agent-rules -->

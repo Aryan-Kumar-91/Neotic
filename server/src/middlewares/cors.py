@@ -1,9 +1,11 @@
 """
 CORS Middleware Configuration for the Neotic Backend.
 """
+
 # pylint: disable=import-error
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI
+
 
 def setup_cors(app: FastAPI):
     """

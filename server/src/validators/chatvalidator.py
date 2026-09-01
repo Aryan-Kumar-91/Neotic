@@ -2,6 +2,7 @@
 Validators for chat-related input data.
 """
 
+
 def validate_prompt(prompt: str) -> str:
     """
     Ensure the prompt is non-empty and well-formatted.

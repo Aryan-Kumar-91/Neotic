@@ -1,10 +1,18 @@
 """
-Service for interacting with Google Gemini models and generating Chain-of-Thought responses.
+Service for interacting with Google Gemini models and generating
+Chain-of-Thought responses.
 """
+
 import base64
 import json
 import re
+import sys
 from typing import List, Optional
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 # pylint: disable=import-error
 import google.generativeai as google_genai
@@ -13,30 +21,18 @@ from src.config.env import GOOGLE_API_KEY
 from src.types.schemas import FileData
 from src.rag.service import get_rag_context
 
-google_genai.configure(api_key=GOOGLE_API_KEY)
+google_genai.configure(api_key=GOOGLE_API_KEY)  # pyright: ignore
 
 # [DYNAMIC MODEL SELECTION]
-# Auto-bind to the best available model that supports generateContent.
-# Prefer 'flash' models for speed.
-DEFAULT_MODEL_NAME = 'models/gemini-2.0-flash'
-try:
-    for model_meta in google_genai.list_models():
-        if 'generateContent' in model_meta.supported_generation_methods:
-            if 'flash' in model_meta.name:
-                DEFAULT_MODEL_NAME = model_meta.name
-                break
-except Exception as list_error:  # pylint: disable=broad-except
-    print(
-        f"Warning: Could not list models ({list_error}), "
-        f"falling back to {DEFAULT_MODEL_NAME}"
-    )
-
-print(f"SUCCESS: Bound AI to model: {DEFAULT_MODEL_NAME}")
-# Enable Gemini's built-in Google Search capability
-AI_MODEL = google_genai.GenerativeModel(
-    model_name=DEFAULT_MODEL_NAME,
-    tools=[{"google_search_retrieval": {}}]
-)
+# Preferred model candidates for runtime fallback without startup network pings
+PREFERRED_MODELS = [
+    "gemini-3.7-flash",
+    "gemini-3.6-flash",
+    "gemini-3.5-flash",
+    "gemini-3.1-flash-lite",
+    "gemini-flash-latest",
+    "gemini-pro-latest",
+]
 
 # ---------------------------------------------------------------------------
 # System instruction builder helpers
@@ -61,7 +57,7 @@ _BASE_SYSTEM_INSTR = (
     "- 'source': The filename of the source document\n"
     "- 'verification_status': 'verified' (if found in context) "
     "or 'unverified' (if generated from general knowledge)\n\n"
-    'Example:\n'
+    "Example:\n"
     '{"thoughts": [...], "final_answer": "...", "citations": '
     '[{"claim": "The sky is blue", "source": "science.pdf", '
     '"verification_status": "verified"}]}'
@@ -69,16 +65,16 @@ _BASE_SYSTEM_INSTR = (
 
 
 def _build_system_instr(
-        user_prefs: Optional[dict],
-        files: Optional[List[FileData]],
-        rag_context: Optional[str],
+    user_prefs: Optional[dict],
+    files: Optional[List[FileData]],
+    rag_context: Optional[str],
 ) -> str:
     """Compose the full system instruction string from optional components."""
     instr = _BASE_SYSTEM_INSTR
 
     if user_prefs:
-        name = user_prefs.get('name', '')
-        interests = user_prefs.get('interests', '')
+        name = user_prefs.get("name", "")
+        interests = user_prefs.get("interests", "")
         if name or interests:
             instr += "\n\nUser Context:"
             if name:
@@ -92,8 +88,8 @@ def _build_system_instr(
 
     if files and any(f.mime_type.startswith("image/") for f in files):
         instr += (
-            '\nThe user has attached image(s). You MUST analyze and '
-            'describe the image content in your reasoning steps.'
+            "\nThe user has attached image(s). You MUST analyze and "
+            "describe the image content in your reasoning steps."
         )
 
     if rag_context:
@@ -103,8 +99,8 @@ def _build_system_instr(
 
 
 def _build_content_parts(
-        full_prompt: str,
-        files: Optional[List[FileData]],
+    full_prompt: str,
+    files: Optional[List[FileData]],
 ) -> list:
     """Construct the multimodal content-parts list for the Gemini request."""
     parts = [full_prompt]
@@ -118,24 +114,25 @@ def _build_content_parts(
             f_mime = f_data.mime_type
 
             if f_mime.startswith("image/"):
-                parts.append({"mime_type": f_mime, "data": f_bytes})
+                part = {"mime_type": f_mime, "data": f_bytes}
+                parts.append(part)  # pyright: ignore[reportArgumentType]
                 print(
-                    f"✓ Attached image: {f_data.name} "
+                    f"[OK] Attached image: {f_data.name} "
                     f"({f_mime}, {len(f_bytes)} bytes)"
                 )
             else:
                 _append_text_file(parts, f_data, f_bytes, f_mime)
         except Exception as file_err:  # pylint: disable=broad-except
-            print(f"⚠ Failed to process file {f_data.name}: {file_err}")
+            print(f"[WARN] Failed to process file {f_data.name}: {file_err}")
 
     return parts
 
 
 def _append_text_file(
-        parts: list,
-        f_data: FileData,
-        f_bytes: bytes,
-        f_mime: str,
+    parts: list,
+    f_data: FileData,
+    f_bytes: bytes,
+    f_mime: str,
 ) -> None:
     """Decode a text-based file and inline its content into the prompt part."""
     try:
@@ -144,16 +141,13 @@ def _append_text_file(
             f"\n\n--- Attached File: {f_data.name} ---\n"
             f"{text_val}\n--- End of {f_data.name} ---"
         )
-        print(
-            f"✓ Attached text: {f_data.name} "
-            f"({f_mime}, {len(text_val)} chars)"
-        )
+        print(f"[OK] Attached text: {f_data.name} " f"({f_mime}, {len(text_val)} chars)")
     except UnicodeDecodeError:
         parts[0] += (
             f"\n\n[Binary file attached: {f_data.name} "
             f"({f_mime}, {len(f_bytes)} bytes) - cannot display content]"
         )
-        print(f"⚠ Binary file (not readable): {f_data.name} ({f_mime})")
+        print(f"[WARN] Binary file (not readable): {f_data.name} ({f_mime})")
 
 
 def _inject_rag_thought(data: dict, library_sources: list) -> dict:
@@ -173,8 +167,8 @@ def _inject_rag_thought(data: dict, library_sources: list) -> dict:
 
 def _parse_response(response_text: str) -> dict:
     """Extract and validate the JSON payload from the model response."""
-    clean_text = re.sub(r'```json|```', '', response_text).strip()
-    match = re.search(r'\{.*\}', clean_text, re.DOTALL)
+    clean_text = re.sub(r"```json|```", "", response_text).strip()
+    match = re.search(r"\{.*\}", clean_text, re.DOTALL)
 
     if not match:
         return {"thoughts": [], "final_answer": response_text, "citations": []}
@@ -194,10 +188,11 @@ def _parse_response(response_text: str) -> dict:
 # Public API
 # ---------------------------------------------------------------------------
 
+
 def generate_thoughts(
-        prompt: str,
-        files: Optional[List[FileData]] = None,
-        user_prefs: Optional[dict] = None,
+    prompt: str,
+    files: Optional[List[FileData]] = None,
+    user_prefs: Optional[dict] = None,
 ) -> dict:
     """
     Generate structured Chain-of-Thought reasoning using the Gemini API.
@@ -208,19 +203,49 @@ def generate_thoughts(
     rag_context: Optional[str] = None
 
     if rag_data:
-        print(f"🔍 Searching local library for: {prompt[:50]}...")
+        print(f"[INFO] Searching local library for: {prompt[:50]}...")
         rag_context = rag_data["context"]
         library_sources = rag_data["sources"]
         if rag_context:
-            print(f"✓ Found RAG context from {len(library_sources)} sources")
+            print(f"[OK] Found RAG context from {len(library_sources)} sources")
 
     system_instr = _build_system_instr(user_prefs, files, rag_context)
     full_prompt = f"{system_instr}\n\nUser Question: {prompt}"
     content_parts = _build_content_parts(full_prompt, files)
 
-    print(f"→ Sending {len(content_parts)} part(s) to Gemini...")
-    response = AI_MODEL.generate_content(content_parts)
-    print(f"✓ AI Response received for: {prompt[:30]}...")
+    print(f"-> Sending {len(content_parts)} part(s) to Gemini...")
+
+    response = None
+    last_error = None
+
+    for model_name in PREFERRED_MODELS:
+        try:
+            model = google_genai.GenerativeModel(model_name=model_name)
+            response = model.generate_content(content_parts)
+            print(f"[OK] AI Response received using '{model_name}' for: {prompt[:30]}...")
+            break
+        except Exception as err:
+            print(f"[WARN] Model '{model_name}' attempt failed: {err}")
+            last_error = err
+
+    if response is None:
+        err_str = str(last_error) if last_error else "Unknown Gemini API error"
+        print(f"[ERROR] All Gemini model attempts failed: {err_str}")
+        return {
+            "thoughts": [
+                {
+                    "step": "API Quota / Connection Alert",
+                    "content": f"Gemini API request status: {err_str}",
+                    "confidence": 0.0,
+                    "duration_ms": 100,
+                }
+            ],
+            "final_answer": (
+                "⚠️ **Gemini API Limit / Quota Exceeded**: The free-tier request quota for your `GOOGLE_API_KEY` has been reached. "
+                "Please wait 30–60 seconds for the rate limit to reset, or update `GOOGLE_API_KEY` in `server/.env` with a fresh key from [Google AI Studio](https://aistudio.google.com)."
+            ),
+            "citations": [],
+        }
 
     data = _parse_response(response.text)
 
