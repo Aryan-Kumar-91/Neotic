@@ -24,7 +24,7 @@
                          "reactflow":  "^11.11.4"
                      },
     "devDependencies":  {
-                            "@eslint/js":  "^10.0.1",
+                            "@eslint/js":  "^9.39.5",
                             "@tailwindcss/postcss":  "^4",
                             "@types/node":  "^26",
                             "@types/react":  "^19",
