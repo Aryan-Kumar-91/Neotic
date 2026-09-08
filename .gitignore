@@ -13,7 +13,7 @@ node_modules/
 __pycache__/
 *.py[cod]
 
-# Next.js
+# Build artifacts
 .next/
 out/
 build/
