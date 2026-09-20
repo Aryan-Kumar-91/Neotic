@@ -724,7 +724,7 @@ export default function NeoticMain() {
       }
     } catch (err) {
       if (err instanceof Error && err.name === "AbortError") return;
-      setMessages([...newMessages, { role: "assistant", content: "The Neotic core failed to respond." }]);
+      setMessages([...newMessages, { role: "assistant", content: "⚠️ Check the server, it is not active/running." }]);
     } finally {
       setIsGenerating(false);
     }

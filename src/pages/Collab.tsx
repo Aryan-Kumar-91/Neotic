@@ -238,7 +238,7 @@ export default function CollabRoom() {
       if (err instanceof Error && err.name === "AbortError") return;
       const errorMsg: Message = {
         role: "assistant",
-        content: "Backend disconnected: " + (err instanceof Error ? err.message : String(err)),
+        content: "⚠️ Check the server, it is not active/running.",
         sender: "system",
       };
       setMessages((prev) => [...prev, errorMsg]);
