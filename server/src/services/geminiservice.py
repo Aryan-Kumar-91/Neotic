@@ -14,6 +14,9 @@ if hasattr(sys.stdout, "reconfigure"):
 if hasattr(sys.stderr, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
+import warnings
+warnings.simplefilter("ignore", category=FutureWarning)
+
 # pylint: disable=import-error
 import google.generativeai as google_genai
 
@@ -26,9 +29,9 @@ google_genai.configure(api_key=GOOGLE_API_KEY)  # pyright: ignore
 # [DYNAMIC MODEL SELECTION]
 # Preferred model candidates for runtime fallback without startup network pings
 PREFERRED_MODELS = [
-    "gemini-3.7-flash",
+    "gemini-3.5-flash-lite",
     "gemini-3.6-flash",
-    "gemini-3.5-flash",
+    "gemini-3.7-flash",
     "gemini-3.1-flash-lite",
     "gemini-flash-latest",
     "gemini-pro-latest",
@@ -49,7 +52,10 @@ _BASE_SYSTEM_INSTR = (
     "- 'confidence': A float between 0.0 and 1.0\n"
     "- 'duration_ms': A simulated integer (e.g., 200 to 1200)\n"
     "- 'is_reflection': (optional boolean)\n\n"
-    "The 'final_answer' should be a comprehensive response to the user.\n\n"
+    "The 'final_answer' should be a comprehensive response to the user.\n"
+    "- ALWAYS wrap any code snippets, HTML/CSS, markup, terminal commands, or scripts "
+    "in standard Markdown fenced code blocks with language tags (e.g., ```html ... ```, ```css ... ```, ```typescript ... ```).\n"
+    "- Use clean Markdown headings (###), bold text (**text**), bullet points (* or -), and inline code (`code`).\n\n"
     "The 'citations' array MUST contain objects linking specific claims to "
     "sources from the provided 'Local Knowledge Base Context'. "
     "Each citation object must have:\n"
@@ -167,14 +173,18 @@ def _inject_rag_thought(data: dict, library_sources: list) -> dict:
 
 def _parse_response(response_text: str) -> dict:
     """Extract and validate the JSON payload from the model response."""
-    clean_text = re.sub(r"```json|```", "", response_text).strip()
-    match = re.search(r"\{.*\}", clean_text, re.DOTALL)
+    clean_outer = response_text.strip()
+    if clean_outer.startswith("```"):
+        clean_outer = re.sub(r"^```(?:json)?\s*\n?", "", clean_outer)
+        clean_outer = re.sub(r"\n?```\s*$", "", clean_outer)
+
+    match = re.search(r"\{.*\}", clean_outer, re.DOTALL)
 
     if not match:
         return {"thoughts": [], "final_answer": response_text, "citations": []}
 
     try:
-        data = json.loads(match.group(0))
+        data = json.loads(match.group(0), strict=False)
         if "thoughts" not in data or "final_answer" not in data:
             return {"thoughts": [], "final_answer": response_text, "citations": []}
         if "citations" not in data:
