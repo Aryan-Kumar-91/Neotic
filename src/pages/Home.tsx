@@ -108,10 +108,26 @@ const MessageContent = ({ content, isUser, theme, isDarkMode, citations }: { con
     return <p className="whitespace-pre-wrap leading-relaxed text-[15px]">{content}</p>;
   }
 
-  // Automatic code detection for responses without backticks
+  // Auto-unpack if a raw JSON envelope ever reached the client
+  let displayContent = content;
+  if (displayContent.trim().startsWith("{") && displayContent.includes('"final_answer"')) {
+    try {
+      const parsed = JSON.parse(displayContent);
+      if (parsed.final_answer) {
+        displayContent = parsed.final_answer;
+      }
+    } catch {
+      const match = displayContent.match(/"final_answer"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+      if (match) {
+        displayContent = match[1].replace(/\\"/g, '"').replace(/\\n/g, "\n");
+      }
+    }
+  }
+
+  // Automatic code detection for responses that are pure raw code without backticks
   const detectRawCode = (text: string) => {
     if (text.startsWith("```")) return null;
-    const codeIndicators = [/^import /, /^const /, /^let /, /^var /, /^function /, /^class /, /^@import /, /^public class /, /^def /, /^#include /, /^\{/];
+    const codeIndicators = [/^import /, /^const /, /^let /, /^var /, /^function /, /^class /, /^@import /, /^public class /, /^def /, /^#include /];
     const lines = text.trim().split("\n");
     if (lines.length > 3) {
       const matchCount = lines.slice(0, 5).filter(line => codeIndicators.some(regex => regex.test(line))).length;
@@ -122,7 +138,7 @@ const MessageContent = ({ content, isUser, theme, isDarkMode, citations }: { con
     return null;
   };
 
-  const rawCode = detectRawCode(content);
+  const rawCode = detectRawCode(displayContent);
   if (rawCode) {
     return <CodeBlock code={rawCode.code} lang={rawCode.lang} isDarkMode={isDarkMode} />;
   }
@@ -304,7 +320,7 @@ const MessageContent = ({ content, isUser, theme, isDarkMode, citations }: { con
     return <div className="space-y-1">{blocks}</div>;
   };
 
-  const parts = content.split(/(```[\s\S]*?(?:```|$))/g).filter(Boolean);
+  const parts = displayContent.split(/(```[\s\S]*?(?:```|$))/g).filter(Boolean);
   
   return (
     <div className={`leading-relaxed text-[15px] ${theme.textPrimary} space-y-4 relative`}>
