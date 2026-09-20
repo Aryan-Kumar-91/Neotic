@@ -174,46 +174,6 @@ def _inject_rag_thought(data: dict, library_sources: list) -> dict:
     return data
 
 
-def _try_parse_json_payload(json_candidate: str) -> Optional[dict]:
-    """Attempt direct and sanitized JSON parsing of candidate string."""
-    # Attempt 1: Direct JSON parse
-    # Attempt 2: Sanitize invalid escape sequences (e.g. LaTeX \theta, \cos)
-    escaped_candidate = re.sub(
-        r'\\(?!["\\/bfnrt]|u[0-9a-fA-F]{4})', r"\\\\", json_candidate
-    )
-    for raw in (json_candidate, escaped_candidate):
-        try:
-            data = json.loads(raw, strict=False)
-            if isinstance(data, dict) and "thoughts" in data and "final_answer" in data:
-                if "citations" not in data or not isinstance(data["citations"], list):
-                    data["citations"] = []
-                return data
-        except (json.JSONDecodeError, ValueError):
-            continue
-    return None
-
-
-def _extract_final_answer(json_candidate: str, fallback_text: str) -> str:
-    """Extract final_answer from candidate string via regex fallback."""
-    fa_match = re.search(
-        r'"final_answer"\s*:\s*"((?:[^"\\]|\\.)*)"', json_candidate, re.DOTALL
-    )
-    if fa_match:
-        try:
-            return json.loads(f'"{fa_match.group(1)}"', strict=False)
-        except (json.JSONDecodeError, ValueError):
-            return fa_match.group(1).replace(r"\"", '"').replace(r"\n", "\n")
-
-    alt_match = re.search(r'"final_answer"\s*:\s*"(.*)', json_candidate, re.DOTALL)
-    if alt_match:
-        raw_tail = alt_match.group(1)
-        if '"' in raw_tail:
-            raw_tail = raw_tail.rsplit('"', 1)[0]
-        return raw_tail.replace(r"\"", '"').replace(r"\n", "\n")
-
-    return fallback_text
-
-
 def _parse_response(response_text: str) -> dict:
     """Extract and validate the JSON payload from the model response."""
     clean_outer = response_text.strip()
@@ -224,11 +184,49 @@ def _parse_response(response_text: str) -> dict:
     match = re.search(r"\{.*\}", clean_outer, re.DOTALL)
     json_candidate = match.group(0) if match else clean_outer
 
-    parsed = _try_parse_json_payload(json_candidate)
-    if parsed is not None:
-        return parsed
+    # Attempt 1: Direct JSON parse
+    try:
+        data = json.loads(json_candidate, strict=False)
+        if isinstance(data, dict) and "thoughts" in data and "final_answer" in data:
+            if "citations" not in data or not isinstance(data["citations"], list):
+                data["citations"] = []
+            return data
+    except (json.JSONDecodeError, ValueError):
+        pass
 
-    final_answer = _extract_final_answer(json_candidate, response_text)
+    # Attempt 2: Sanitize invalid escape sequences (LaTeX math formulas like \theta, \cos, \sin)
+    try:
+        sanitized = re.sub(
+            r'\\(?!["\\/bfnrt]|u[0-9a-fA-F]{4})', r"\\\\", json_candidate
+        )
+        data = json.loads(sanitized, strict=False)
+        if isinstance(data, dict) and "thoughts" in data and "final_answer" in data:
+            if "citations" not in data or not isinstance(data["citations"], list):
+                data["citations"] = []
+            return data
+    except (json.JSONDecodeError, ValueError):
+        pass
+
+    # Attempt 3: Regex extraction of final_answer (never leak raw JSON schema)
+    fa_match = re.search(
+        r'"final_answer"\s*:\s*"((?:[^"\\]|\\.)*)"', json_candidate, re.DOTALL
+    )
+    final_answer = ""
+    if fa_match:
+        try:
+            final_answer = json.loads(f'"{fa_match.group(1)}"', strict=False)
+        except Exception:
+            final_answer = fa_match.group(1).replace(r"\"", '"').replace(r"\n", "\n")
+    else:
+        alt_match = re.search(r'"final_answer"\s*:\s*"(.*)', json_candidate, re.DOTALL)
+        if alt_match:
+            raw_tail = alt_match.group(1)
+            if '"' in raw_tail:
+                raw_tail = raw_tail.rsplit('"', 1)[0]
+            final_answer = raw_tail.replace(r"\"", '"').replace(r"\n", "\n")
+        else:
+            final_answer = response_text
+
     return {
         "thoughts": [
             {
