@@ -15,6 +15,7 @@ if hasattr(sys.stderr, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 import warnings
+
 warnings.simplefilter("ignore", category=FutureWarning)
 
 # pylint: disable=import-error
@@ -147,7 +148,9 @@ def _append_text_file(
             f"\n\n--- Attached File: {f_data.name} ---\n"
             f"{text_val}\n--- End of {f_data.name} ---"
         )
-        print(f"[OK] Attached text: {f_data.name} " f"({f_mime}, {len(text_val)} chars)")
+        print(
+            f"[OK] Attached text: {f_data.name} " f"({f_mime}, {len(text_val)} chars)"
+        )
     except UnicodeDecodeError:
         parts[0] += (
             f"\n\n[Binary file attached: {f_data.name} "
@@ -193,7 +196,9 @@ def _parse_response(response_text: str) -> dict:
 
     # Attempt 2: Sanitize invalid escape sequences (LaTeX math formulas like \theta, \cos, \sin)
     try:
-        sanitized = re.sub(r'\\(?!["\\/bfnrt]|u[0-9a-fA-F]{4})', r'\\\\', json_candidate)
+        sanitized = re.sub(
+            r'\\(?!["\\/bfnrt]|u[0-9a-fA-F]{4})', r"\\\\", json_candidate
+        )
         data = json.loads(sanitized, strict=False)
         if isinstance(data, dict) and "thoughts" in data and "final_answer" in data:
             if "citations" not in data or not isinstance(data["citations"], list):
@@ -203,20 +208,22 @@ def _parse_response(response_text: str) -> dict:
         pass
 
     # Attempt 3: Regex extraction of final_answer (never leak raw JSON schema)
-    fa_match = re.search(r'"final_answer"\s*:\s*"((?:[^"\\]|\\.)*)"', json_candidate, re.DOTALL)
+    fa_match = re.search(
+        r'"final_answer"\s*:\s*"((?:[^"\\]|\\.)*)"', json_candidate, re.DOTALL
+    )
     final_answer = ""
     if fa_match:
         try:
             final_answer = json.loads(f'"{fa_match.group(1)}"', strict=False)
         except Exception:
-            final_answer = fa_match.group(1).replace(r'\"', '"').replace(r'\n', '\n')
+            final_answer = fa_match.group(1).replace(r"\"", '"').replace(r"\n", "\n")
     else:
         alt_match = re.search(r'"final_answer"\s*:\s*"(.*)', json_candidate, re.DOTALL)
         if alt_match:
             raw_tail = alt_match.group(1)
             if '"' in raw_tail:
                 raw_tail = raw_tail.rsplit('"', 1)[0]
-            final_answer = raw_tail.replace(r'\"', '"').replace(r'\n', '\n')
+            final_answer = raw_tail.replace(r"\"", '"').replace(r"\n", "\n")
         else:
             final_answer = response_text
 
@@ -275,7 +282,9 @@ def generate_thoughts(
                 generation_config={"response_mime_type": "application/json"},
             )
             response = model.generate_content(content_parts)
-            print(f"[OK] AI Response received using '{model_name}' for: {prompt[:30]}...")
+            print(
+                f"[OK] AI Response received using '{model_name}' for: {prompt[:30]}..."
+            )
             break
         except Exception as err:
             print(f"[WARN] Model '{model_name}' attempt failed: {err}")
