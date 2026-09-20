@@ -14,6 +14,10 @@ if hasattr(sys.stdout, "reconfigure"):
 if hasattr(sys.stderr, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
+import warnings
+
+warnings.simplefilter("ignore", category=FutureWarning)
+
 # pylint: disable=import-error
 import google.generativeai as google_genai
 
@@ -26,9 +30,9 @@ google_genai.configure(api_key=GOOGLE_API_KEY)  # pyright: ignore
 # [DYNAMIC MODEL SELECTION]
 # Preferred model candidates for runtime fallback without startup network pings
 PREFERRED_MODELS = [
-    "gemini-3.7-flash",
+    "gemini-3.5-flash-lite",
     "gemini-3.6-flash",
-    "gemini-3.5-flash",
+    "gemini-3.7-flash",
     "gemini-3.1-flash-lite",
     "gemini-flash-latest",
     "gemini-pro-latest",
@@ -49,7 +53,10 @@ _BASE_SYSTEM_INSTR = (
     "- 'confidence': A float between 0.0 and 1.0\n"
     "- 'duration_ms': A simulated integer (e.g., 200 to 1200)\n"
     "- 'is_reflection': (optional boolean)\n\n"
-    "The 'final_answer' should be a comprehensive response to the user.\n\n"
+    "The 'final_answer' should be a comprehensive response to the user.\n"
+    "- ALWAYS wrap any code snippets, HTML/CSS, markup, terminal commands, or scripts "
+    "in standard Markdown fenced code blocks with language tags (e.g., ```html ... ```, ```css ... ```, ```typescript ... ```).\n"
+    "- Use clean Markdown headings (###), bold text (**text**), bullet points (* or -), and inline code (`code`).\n\n"
     "The 'citations' array MUST contain objects linking specific claims to "
     "sources from the provided 'Local Knowledge Base Context'. "
     "Each citation object must have:\n"
@@ -141,7 +148,9 @@ def _append_text_file(
             f"\n\n--- Attached File: {f_data.name} ---\n"
             f"{text_val}\n--- End of {f_data.name} ---"
         )
-        print(f"[OK] Attached text: {f_data.name} " f"({f_mime}, {len(text_val)} chars)")
+        print(
+            f"[OK] Attached text: {f_data.name} " f"({f_mime}, {len(text_val)} chars)"
+        )
     except UnicodeDecodeError:
         parts[0] += (
             f"\n\n[Binary file attached: {f_data.name} "
@@ -167,21 +176,69 @@ def _inject_rag_thought(data: dict, library_sources: list) -> dict:
 
 def _parse_response(response_text: str) -> dict:
     """Extract and validate the JSON payload from the model response."""
-    clean_text = re.sub(r"```json|```", "", response_text).strip()
-    match = re.search(r"\{.*\}", clean_text, re.DOTALL)
+    clean_outer = response_text.strip()
+    if clean_outer.startswith("```"):
+        clean_outer = re.sub(r"^```(?:json)?\s*\n?", "", clean_outer)
+        clean_outer = re.sub(r"\n?```\s*$", "", clean_outer)
 
-    if not match:
-        return {"thoughts": [], "final_answer": response_text, "citations": []}
+    match = re.search(r"\{.*\}", clean_outer, re.DOTALL)
+    json_candidate = match.group(0) if match else clean_outer
 
+    # Attempt 1: Direct JSON parse
     try:
-        data = json.loads(match.group(0))
-        if "thoughts" not in data or "final_answer" not in data:
-            return {"thoughts": [], "final_answer": response_text, "citations": []}
-        if "citations" not in data:
-            data["citations"] = []
-        return data
-    except (json.JSONDecodeError, AttributeError, ValueError):
-        return {"thoughts": [], "final_answer": response_text, "citations": []}
+        data = json.loads(json_candidate, strict=False)
+        if isinstance(data, dict) and "thoughts" in data and "final_answer" in data:
+            if "citations" not in data or not isinstance(data["citations"], list):
+                data["citations"] = []
+            return data
+    except (json.JSONDecodeError, ValueError):
+        pass
+
+    # Attempt 2: Sanitize invalid escape sequences (LaTeX math formulas like \theta, \cos, \sin)
+    try:
+        sanitized = re.sub(
+            r'\\(?!["\\/bfnrt]|u[0-9a-fA-F]{4})', r"\\\\", json_candidate
+        )
+        data = json.loads(sanitized, strict=False)
+        if isinstance(data, dict) and "thoughts" in data and "final_answer" in data:
+            if "citations" not in data or not isinstance(data["citations"], list):
+                data["citations"] = []
+            return data
+    except (json.JSONDecodeError, ValueError):
+        pass
+
+    # Attempt 3: Regex extraction of final_answer (never leak raw JSON schema)
+    fa_match = re.search(
+        r'"final_answer"\s*:\s*"((?:[^"\\]|\\.)*)"', json_candidate, re.DOTALL
+    )
+    final_answer = ""
+    if fa_match:
+        try:
+            final_answer = json.loads(f'"{fa_match.group(1)}"', strict=False)
+        except Exception:
+            final_answer = fa_match.group(1).replace(r"\"", '"').replace(r"\n", "\n")
+    else:
+        alt_match = re.search(r'"final_answer"\s*:\s*"(.*)', json_candidate, re.DOTALL)
+        if alt_match:
+            raw_tail = alt_match.group(1)
+            if '"' in raw_tail:
+                raw_tail = raw_tail.rsplit('"', 1)[0]
+            final_answer = raw_tail.replace(r"\"", '"').replace(r"\n", "\n")
+        else:
+            final_answer = response_text
+
+    return {
+        "thoughts": [
+            {
+                "step": "Synthesis",
+                "content": "Synthesized insights across core concepts.",
+                "confidence": 0.95,
+                "duration_ms": 350,
+            }
+        ],
+        "final_answer": final_answer,
+        "citations": [],
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -220,9 +277,14 @@ def generate_thoughts(
 
     for model_name in PREFERRED_MODELS:
         try:
-            model = google_genai.GenerativeModel(model_name=model_name)
+            model = google_genai.GenerativeModel(
+                model_name=model_name,
+                generation_config={"response_mime_type": "application/json"},
+            )
             response = model.generate_content(content_parts)
-            print(f"[OK] AI Response received using '{model_name}' for: {prompt[:30]}...")
+            print(
+                f"[OK] AI Response received using '{model_name}' for: {prompt[:30]}..."
+            )
             break
         except Exception as err:
             print(f"[WARN] Model '{model_name}' attempt failed: {err}")

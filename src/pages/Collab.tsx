@@ -15,7 +15,109 @@ import {
 } from "lucide-react";
 
 // â”€â”€â”€ Markdown Parser (reused from main page) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const CollabCodeBlock = ({ code, lang }: { code: string; lang: string }) => {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="my-3 rounded-xl overflow-hidden border border-[#333]">
+      <div className="flex items-center justify-between px-4 py-2 bg-[#1E1E20] border-b border-[#333]">
+        <span className="text-xs font-mono text-[#A1A1AA] lowercase">{lang || "code"}</span>
+        <button
+          onClick={handleCopy}
+          className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs transition-colors ${
+            copied ? "bg-emerald-500/10 text-emerald-400" : "text-[#A1A1AA] hover:text-white hover:bg-white/5"
+          }`}
+        >
+          {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+          <span>{copied ? "Copied" : "Copy"}</span>
+        </button>
+      </div>
+      <div className="p-4 overflow-x-auto bg-[#0E0E0F]">
+        <code className="text-sm font-mono text-[#E3E3E3] whitespace-pre">{code}</code>
+      </div>
+    </div>
+  );
+};
+
 const MessageContent = ({ content }: { content: string }) => {
+  const renderInline = (raw: string): React.ReactNode => {
+    const tokens = raw.split(/(`[^`\n]+`|\*\*[^*]+\*\*)/g);
+    return tokens.map((token, idx) => {
+      if (token.startsWith("`") && token.endsWith("`") && token.length > 2) {
+        return (
+          <code key={idx} className="px-1.5 py-0.5 rounded font-mono text-[13px] bg-white/10 text-purple-300">
+            {token.slice(1, -1)}
+          </code>
+        );
+      }
+      if (token.startsWith("**") && token.endsWith("**") && token.length > 4) {
+        return <strong key={idx} className="font-semibold text-white">{token.slice(2, -2)}</strong>;
+      }
+      return token;
+    });
+  };
+
+  const renderMarkdown = (text: string) => {
+    const lines = text.split("\n");
+    const blocks: React.ReactNode[] = [];
+    let list: React.ReactNode[] = [];
+
+    const flushList = () => {
+      if (list.length > 0) {
+        blocks.push(<ul key={`l-${blocks.length}`} className="my-2 space-y-1 pl-1">{list}</ul>);
+        list = [];
+      }
+    };
+
+    lines.forEach((line, idx) => {
+      const trimmed = line.trim();
+      if (!trimmed) {
+        flushList();
+        return;
+      }
+
+      if (trimmed.startsWith("### ")) {
+        flushList();
+        blocks.push(<h3 key={idx} className="text-base font-bold mt-4 mb-2 text-white">{renderInline(trimmed.slice(4))}</h3>);
+      } else if (trimmed.startsWith("## ")) {
+        flushList();
+        blocks.push(<h2 key={idx} className="text-lg font-bold mt-5 mb-2 text-white">{renderInline(trimmed.slice(3))}</h2>);
+      } else if (trimmed.startsWith("# ")) {
+        flushList();
+        blocks.push(<h1 key={idx} className="text-xl font-bold mt-6 mb-2 text-white">{renderInline(trimmed.slice(2))}</h1>);
+      } else if (/^[-*]\s/.test(trimmed)) {
+        list.push(
+          <li key={idx} className="flex items-start gap-2 leading-relaxed">
+            <span className="w-1.5 h-1.5 rounded-full bg-purple-400 mt-2 shrink-0" />
+            <span className="flex-1">{renderInline(trimmed.replace(/^[-*]\s+/, ""))}</span>
+          </li>
+        );
+      } else if (/^\d+\.\s/.test(trimmed)) {
+        const numMatch = trimmed.match(/^(\d+)\.\s+(.*)/);
+        if (numMatch) {
+          list.push(
+            <li key={idx} className="flex items-start gap-2 leading-relaxed">
+              <span className="text-xs font-bold text-purple-400 mt-1 shrink-0 font-mono w-4">{numMatch[1]}.</span>
+              <span className="flex-1">{renderInline(numMatch[2])}</span>
+            </li>
+          );
+        }
+      } else {
+        flushList();
+        blocks.push(<p key={idx} className="leading-relaxed my-1">{renderInline(line)}</p>);
+      }
+    });
+
+    flushList();
+    return <div className="space-y-1">{blocks}</div>;
+  };
+
   const parts = content.split(/(```[\s\S]*?(?:```|$))/g).filter(Boolean);
   return (
     <div className="leading-relaxed text-[15px] text-[#E3E3E3] space-y-3">
@@ -23,20 +125,10 @@ const MessageContent = ({ content }: { content: string }) => {
         if (part.startsWith("```")) {
           const match = part.match(/```(\w*)\n([\s\S]*?)(?:```|$)/);
           if (match) {
-            return (
-              <div key={i} className="my-3 rounded-xl overflow-hidden border border-[#333]">
-                <div className="flex items-center justify-between px-4 py-2 bg-[#1E1E20] border-b border-[#333]">
-                  <span className="text-xs font-mono text-[#A1A1AA] lowercase">{match[1] || "code"}</span>
-                  <button onClick={() => navigator.clipboard.writeText(match[2])} className="text-xs text-[#A1A1AA] hover:text-white transition-colors">Copy</button>
-                </div>
-                <div className="p-4 overflow-x-auto bg-[#0E0E0F]">
-                  <code className="text-sm font-mono text-[#E3E3E3] whitespace-pre">{match[2]}</code>
-                </div>
-              </div>
-            );
+            return <CollabCodeBlock key={i} code={match[2]} lang={match[1]} />;
           }
         }
-        return <p key={i} className="whitespace-pre-wrap">{part}</p>;
+        return <div key={i}>{renderMarkdown(part)}</div>;
       })}
     </div>
   );
@@ -146,7 +238,7 @@ export default function CollabRoom() {
       if (err instanceof Error && err.name === "AbortError") return;
       const errorMsg: Message = {
         role: "assistant",
-        content: "Backend disconnected: " + (err instanceof Error ? err.message : String(err)),
+        content: "⚠️ Check the server, it is not active/running.",
         sender: "system",
       };
       setMessages((prev) => [...prev, errorMsg]);

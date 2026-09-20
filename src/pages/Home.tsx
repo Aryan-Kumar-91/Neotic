@@ -108,10 +108,26 @@ const MessageContent = ({ content, isUser, theme, isDarkMode, citations }: { con
     return <p className="whitespace-pre-wrap leading-relaxed text-[15px]">{content}</p>;
   }
 
-  // Automatic code detection for responses without backticks
+  // Auto-unpack if a raw JSON envelope ever reached the client
+  let displayContent = content;
+  if (displayContent.trim().startsWith("{") && displayContent.includes('"final_answer"')) {
+    try {
+      const parsed = JSON.parse(displayContent);
+      if (parsed.final_answer) {
+        displayContent = parsed.final_answer;
+      }
+    } catch {
+      const match = displayContent.match(/"final_answer"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+      if (match) {
+        displayContent = match[1].replace(/\\"/g, '"').replace(/\\n/g, "\n");
+      }
+    }
+  }
+
+  // Automatic code detection for responses that are pure raw code without backticks
   const detectRawCode = (text: string) => {
     if (text.startsWith("```")) return null;
-    const codeIndicators = [/^import /, /^const /, /^let /, /^var /, /^function /, /^class /, /^@import /, /^public class /, /^def /, /^#include /, /^\{/];
+    const codeIndicators = [/^import /, /^const /, /^let /, /^var /, /^function /, /^class /, /^@import /, /^public class /, /^def /, /^#include /];
     const lines = text.trim().split("\n");
     if (lines.length > 3) {
       const matchCount = lines.slice(0, 5).filter(line => codeIndicators.some(regex => regex.test(line))).length;
@@ -122,68 +138,189 @@ const MessageContent = ({ content, isUser, theme, isDarkMode, citations }: { con
     return null;
   };
 
-  const rawCode = detectRawCode(content);
+  const rawCode = detectRawCode(displayContent);
   if (rawCode) {
     return <CodeBlock code={rawCode.code} lang={rawCode.lang} isDarkMode={isDarkMode} />;
   }
 
-  const renderTextWithCitations = (text: string, citations?: Citation[]) => {
-    if (!citations || citations.length === 0) return <p className="whitespace-pre-wrap py-1">{text}</p>;
-
-    // Sort citations by length (descending) to avoid partial matches on shorter claims
-    const sortedCitations = [...citations].sort((a, b) => b.claim.length - a.claim.length);
-
-    // This is a simple implementation: wrap exact matches of claims.
-    // In a real app, we might use regex with boundary checks or NLP.
-    const parts: (string | React.ReactNode)[] = [text];
-
-    sortedCitations.forEach((cit) => {
-        for (let i = 0; i < parts.length; i++) {
-            const part = parts[i];
-            if (typeof part !== 'string') continue;
-
-            const claimIndex = part.indexOf(cit.claim);
-            if (claimIndex !== -1) {
-                const before = part.substring(0, claimIndex);
-                const after = part.substring(claimIndex + cit.claim.length);
-                const element = (
-                    <span 
-                        key={`${cit.source}-${i}`}
-                        className={`relative cursor-help transition-all duration-300 border-b-2 ${
-                            cit.verification_status === 'verified' ? 'border-emerald-500/40 hover:bg-emerald-500/10' : 'border-amber-500/40 hover:bg-amber-500/10'
-                        }`}
-                        onMouseEnter={() => setActiveCitation(cit)}
-                        onMouseLeave={() => setActiveCitation(null)}
-                    >
-                        {cit.claim}
-                        {activeCitation === cit && (
-                            <span className="absolute bottom-full left-0 mb-2 w-64 p-3 rounded-xl bg-[#161618] border border-white/10 shadow-2xl z-50 text-[11px] animate-in fade-in zoom-in slide-in-from-bottom-2 duration-200">
-                                <div className="flex items-center justify-between mb-1.5">
-                                    <span className="font-bold flex items-center gap-1">
-                                        {cit.verification_status === 'verified' ? <ShieldCheck className="w-3 h-3 text-emerald-500" /> : <ShieldAlert className="w-3 h-3 text-amber-500" />}
-                                        {cit.verification_status === 'verified' ? 'Verified Evidence' : 'Unverified Claim'}
-                                    </span>
-                                    <span className="text-[9px] px-1 bg-white/5 rounded text-white/40 uppercase tracking-tighter">AI Analysis</span>
-                                </div>
-                                <div className="text-white/80 leading-relaxed mb-2 italic">&ldquo;{cit.claim}&rdquo;</div>
-                                <div className="pt-2 border-t border-white/5 flex items-center gap-1.5 text-[10px] text-purple-400 font-medium">
-                                    <FileText className="w-3 h-3" />
-                                    Source: {cit.source}
-                                </div>
-                            </span>
-                        )}
-                    </span>
-                );
-                parts.splice(i, 1, before, element, after);
-                i += 2; // skip the new element and 'after' part
-            }
-        }
+  const renderMarkdownInline = (raw: string, keyPrefix: number | string): React.ReactNode => {
+    const tokens = raw.split(/(`[^`\n]+`|\*\*[^*]+\*\*)/g);
+    return tokens.map((token, pIdx) => {
+      const k = `${keyPrefix}-${pIdx}`;
+      if (token.startsWith("`") && token.endsWith("`") && token.length > 2) {
+        return (
+          <code
+            key={k}
+            className="px-1.5 py-0.5 rounded font-mono text-[13px] bg-slate-200/70 dark:bg-white/10 text-purple-600 dark:text-purple-300 font-medium"
+          >
+            {token.slice(1, -1)}
+          </code>
+        );
+      }
+      if (token.startsWith("**") && token.endsWith("**") && token.length > 4) {
+        return (
+          <strong key={k} className="font-semibold text-slate-900 dark:text-white">
+            {token.slice(2, -2)}
+          </strong>
+        );
+      }
+      return token;
     });
-
-    return <div className="whitespace-pre-wrap py-1 leading-relaxed">{parts}</div>;
   };
 
-  const parts = content.split(/(```[\s\S]*?(?:```|$))/g).filter(Boolean);
+  const renderInlineTokens = (
+    text: string,
+    cits?: Citation[],
+    actCit?: Citation | null,
+    setActCit?: (c: Citation | null) => void
+  ): React.ReactNode => {
+    if (cits && cits.length > 0 && setActCit) {
+      const sortedCitations = [...cits].sort((a, b) => b.claim.length - a.claim.length);
+      const parts: (string | React.ReactNode)[] = [text];
+
+      sortedCitations.forEach((cit) => {
+        for (let i = 0; i < parts.length; i++) {
+          const part = parts[i];
+          if (typeof part !== "string") continue;
+
+          const claimIndex = part.indexOf(cit.claim);
+          if (claimIndex !== -1) {
+            const before = part.substring(0, claimIndex);
+            const after = part.substring(claimIndex + cit.claim.length);
+            const element = (
+              <span
+                key={`${cit.source}-${i}`}
+                className={`relative cursor-help transition-all duration-300 border-b-2 ${
+                  cit.verification_status === "verified"
+                    ? "border-emerald-500/40 hover:bg-emerald-500/10"
+                    : "border-amber-500/40 hover:bg-amber-500/10"
+                }`}
+                onMouseEnter={() => setActCit(cit)}
+                onMouseLeave={() => setActCit(null)}
+              >
+                {cit.claim}
+                {actCit === cit && (
+                  <span className="absolute bottom-full left-0 mb-2 w-64 p-3 rounded-xl bg-[#161618] border border-white/10 shadow-2xl z-50 text-[11px] animate-in fade-in zoom-in slide-in-from-bottom-2 duration-200">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="font-bold flex items-center gap-1">
+                        {cit.verification_status === "verified" ? (
+                          <ShieldCheck className="w-3 h-3 text-emerald-500" />
+                        ) : (
+                          <ShieldAlert className="w-3 h-3 text-amber-500" />
+                        )}
+                        {cit.verification_status === "verified" ? "Verified Evidence" : "Unverified Claim"}
+                      </span>
+                      <span className="text-[9px] px-1 bg-white/5 rounded text-white/40 uppercase tracking-tighter">AI Analysis</span>
+                    </div>
+                    <div className="text-white/80 leading-relaxed mb-2 italic">&ldquo;{cit.claim}&rdquo;</div>
+                    <div className="pt-2 border-t border-white/5 flex items-center gap-1.5 text-[10px] text-purple-400 font-medium">
+                      <FileText className="w-3 h-3" />
+                      Source: {cit.source}
+                    </div>
+                  </span>
+                )}
+              </span>
+            );
+            parts.splice(i, 1, before, element, after);
+            i += 2;
+          }
+        }
+      });
+
+      return parts.map((chunk, cIdx) =>
+        typeof chunk === "string" ? renderMarkdownInline(chunk, cIdx) : chunk
+      );
+    }
+
+    return renderMarkdownInline(text, 0);
+  };
+
+  const renderFormattedMarkdown = (text: string, cits?: Citation[]) => {
+    const lines = text.split("\n");
+    const blocks: React.ReactNode[] = [];
+    let currentList: React.ReactNode[] = [];
+
+    const flushList = () => {
+      if (currentList.length > 0) {
+        blocks.push(
+          <ul key={`ul-${blocks.length}`} className="my-2 space-y-1.5 pl-1">
+            {currentList}
+          </ul>
+        );
+        currentList = [];
+      }
+    };
+
+    lines.forEach((line, idx) => {
+      const trimmed = line.trim();
+      if (!trimmed) {
+        flushList();
+        return;
+      }
+
+      if (trimmed === "---" || trimmed === "***") {
+        flushList();
+        blocks.push(<hr key={idx} className="my-4 border-slate-200 dark:border-white/10" />);
+      } else if (trimmed.startsWith("### ")) {
+        flushList();
+        blocks.push(
+          <h3 key={idx} className="text-base font-bold mt-4 mb-2 text-slate-900 dark:text-white">
+            {renderInlineTokens(trimmed.slice(4), cits, activeCitation, setActiveCitation)}
+          </h3>
+        );
+      } else if (trimmed.startsWith("## ")) {
+        flushList();
+        blocks.push(
+          <h2 key={idx} className="text-lg font-bold mt-5 mb-2.5 text-slate-900 dark:text-white">
+            {renderInlineTokens(trimmed.slice(3), cits, activeCitation, setActiveCitation)}
+          </h2>
+        );
+      } else if (trimmed.startsWith("# ")) {
+        flushList();
+        blocks.push(
+          <h1 key={idx} className="text-xl font-bold mt-6 mb-3 text-slate-900 dark:text-white">
+            {renderInlineTokens(trimmed.slice(2), cits, activeCitation, setActiveCitation)}
+          </h1>
+        );
+      } else if (/^[-*]\s/.test(trimmed)) {
+        const itemText = trimmed.replace(/^[-*]\s+/, "");
+        currentList.push(
+          <li key={idx} className="flex items-start gap-2 leading-relaxed">
+            <span className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-2 shrink-0" />
+            <span className="flex-1">
+              {renderInlineTokens(itemText, cits, activeCitation, setActiveCitation)}
+            </span>
+          </li>
+        );
+      } else if (/^\d+\.\s/.test(trimmed)) {
+        const numMatch = trimmed.match(/^(\d+)\.\s+(.*)/);
+        if (numMatch) {
+          currentList.push(
+            <li key={idx} className="flex items-start gap-2 leading-relaxed">
+              <span className="text-xs font-bold text-purple-500 mt-1 shrink-0 font-mono w-4">
+                {numMatch[1]}.
+              </span>
+              <span className="flex-1">
+                {renderInlineTokens(numMatch[2], cits, activeCitation, setActiveCitation)}
+              </span>
+            </li>
+          );
+        }
+      } else {
+        flushList();
+        blocks.push(
+          <p key={idx} className="leading-relaxed my-1">
+            {renderInlineTokens(line, cits, activeCitation, setActiveCitation)}
+          </p>
+        );
+      }
+    });
+
+    flushList();
+    return <div className="space-y-1">{blocks}</div>;
+  };
+
+  const parts = displayContent.split(/(```[\s\S]*?(?:```|$))/g).filter(Boolean);
   
   return (
     <div className={`leading-relaxed text-[15px] ${theme.textPrimary} space-y-4 relative`}>
@@ -196,14 +333,14 @@ const MessageContent = ({ content, isUser, theme, isDarkMode, citations }: { con
             return <CodeBlock key={index} code={code} lang={lang} isDarkMode={isDarkMode} />;
           }
           const smallMatch = part.match(/```(\w*)\s([\s\S]*?)(?:```|$)/);
-           if (smallMatch) {
+          if (smallMatch) {
             const lang = smallMatch[1] || 'code';
             const code = smallMatch[2];
             return <CodeBlock key={index} code={code} lang={lang} isDarkMode={isDarkMode} />;
           }
-          return renderTextWithCitations(part.replace(/```/g, ''), citations);
+          return renderFormattedMarkdown(part.replace(/```/g, ''), citations);
         }
-        return <div key={index}>{renderTextWithCitations(part, citations)}</div>;
+        return <div key={index}>{renderFormattedMarkdown(part, citations)}</div>;
       })}
     </div>
   );
@@ -587,7 +724,7 @@ export default function NeoticMain() {
       }
     } catch (err) {
       if (err instanceof Error && err.name === "AbortError") return;
-      setMessages([...newMessages, { role: "assistant", content: "The Neotic core failed to respond." }]);
+      setMessages([...newMessages, { role: "assistant", content: "⚠️ Check the server, it is not active/running." }]);
     } finally {
       setIsGenerating(false);
     }
