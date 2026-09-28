@@ -12,11 +12,11 @@
         "lint": "eslint ."
     },
     "dependencies": {
-        "@supabase/supabase-js": "^2.116.0",
+        "@supabase/supabase-js": "^2.117.0",
         "@types/react-syntax-highlighter": "^15.5.13",
         "@xyflow/react": "^12.11.2",
         "firebase": "^12.19.0",
-        "lucide-react": "^1.43.0",
+        "lucide-react": "^1.47.0",
         "react": "19.3.0",
         "react-dom": "19.3.0",
         "react-router-dom": "^7.18.4",
