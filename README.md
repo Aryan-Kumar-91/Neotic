@@ -179,7 +179,7 @@ Neotic/
 
 ## License
 
-This repository is licensed under the **GNU General Public License v3.0**. See the [LICENSE](LICENSE) file for more details.
+This repository is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for more details.
 
 ---
 
