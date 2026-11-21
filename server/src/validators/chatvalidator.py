@@ -31,9 +31,7 @@ def validate_files(files: Optional[List[FileData]]) -> None:
     if not files:
         return
     if len(files) > MAX_FILES_COUNT:
-        raise ValueError(
-            f"Maximum {MAX_FILES_COUNT} files can be attached per request"
-        )
+        raise ValueError(f"Maximum {MAX_FILES_COUNT} files can be attached per request")
     for file in files:
         if not file.name or not file.name.strip():
             raise ValueError("Attached file must have a non-empty name")

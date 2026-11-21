@@ -7,6 +7,7 @@ import uuid
 
 # pylint: disable=import-error
 from fastapi import WebSocket, WebSocketDisconnect
+
 try:
     from langchain_core.messages import HumanMessage
 except ImportError:
