@@ -1,11 +1,12 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useRef } from 'react';
 import { ReactFlow, Background, MarkerType, Node, Edge, Handle, Position } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import {
   HelpCircle, CheckCircle, Filter, BrainCircuit, Eye, Calculator,
   Image as ImageIcon, X, Sparkles, Lightbulb, ScanSearch, Layers, Waypoints, Library,
-  Download, Copy, Check
+  Download, Copy, Check, Camera, Loader2
 } from 'lucide-react';
+import { toPng, toSvg } from 'html-to-image';
 
 // â”€â”€â”€ Stage Naming & Color Palette â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Each stage gets a unique descriptive name and a bright, comfortable color pair
@@ -133,6 +134,8 @@ export default function ReasoningChain({ thoughts, isGenerating }: { thoughts: T
   }, []);
 
   const [copied, setCopied] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const handleCopyTrace = useCallback(() => {
     if (!thoughts || thoughts.length === 0) return;
@@ -158,6 +161,43 @@ export default function ReasoningChain({ thoughts, isGenerating }: { thoughts: T
     a.download = `neotic-trace-${Date.now()}.json`;
     a.click();
     URL.revokeObjectURL(url);
+  }, [thoughts]);
+
+  const handleExportPNG = useCallback(async () => {
+    if (!containerRef.current || !thoughts || thoughts.length === 0) return;
+    try {
+      setIsExporting(true);
+      const dataUrl = await toPng(containerRef.current, {
+        backgroundColor: '#0A0A0B',
+        pixelRatio: 2,
+      });
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = `neotic-reasoning-dag-${Date.now()}.png`;
+      a.click();
+    } catch (err) {
+      console.error('Failed to export canvas as PNG:', err);
+    } finally {
+      setIsExporting(false);
+    }
+  }, [thoughts]);
+
+  const handleExportSVG = useCallback(async () => {
+    if (!containerRef.current || !thoughts || thoughts.length === 0) return;
+    try {
+      setIsExporting(true);
+      const dataUrl = await toSvg(containerRef.current, {
+        backgroundColor: '#0A0A0B',
+      });
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = `neotic-reasoning-dag-${Date.now()}.svg`;
+      a.click();
+    } catch (err) {
+      console.error('Failed to export canvas as SVG:', err);
+    } finally {
+      setIsExporting(false);
+    }
   }, [thoughts]);
 
   const { nodes, edges } = useMemo(() => {
@@ -284,6 +324,7 @@ export default function ReasoningChain({ thoughts, isGenerating }: { thoughts: T
 
   return (
     <div
+      ref={containerRef}
       className="w-full h-[380px] bg-[#0A0A0B] rounded-2xl border border-[#1A1A1C] overflow-hidden mb-6 mt-2 relative z-0 isolate"
     >
       {/* â”€â”€ Top Bar â”€â”€ */}
@@ -308,6 +349,24 @@ export default function ReasoningChain({ thoughts, isGenerating }: { thoughts: T
           >
             <Download className="w-3 h-3" />
             JSON
+          </button>
+          <button
+            onClick={handleExportPNG}
+            disabled={isExporting}
+            title="Download reasoning DAG as PNG image"
+            className="flex items-center gap-1 text-[#666] hover:text-[#bbb] text-[10px] uppercase font-semibold tracking-wider transition-colors px-1.5 py-1 rounded hover:bg-white/5 cursor-pointer disabled:opacity-50"
+          >
+            {isExporting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Camera className="w-3 h-3" />}
+            PNG
+          </button>
+          <button
+            onClick={handleExportSVG}
+            disabled={isExporting}
+            title="Download reasoning DAG as vector SVG"
+            className="flex items-center gap-1 text-[#666] hover:text-[#bbb] text-[10px] uppercase font-semibold tracking-wider transition-colors px-1.5 py-1 rounded hover:bg-white/5 cursor-pointer disabled:opacity-50"
+          >
+            <Download className="w-3 h-3" />
+            SVG
           </button>
           <div className="w-px h-3 bg-[#222]" />
           <button

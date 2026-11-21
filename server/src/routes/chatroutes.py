@@ -4,7 +4,8 @@ API routes for chat-related operations.
 
 # pylint: disable=import-error
 from fastapi import APIRouter, HTTPException
-from src.controllers.chatcontroller import process_chat
+from starlette.responses import StreamingResponse
+from src.controllers.chatcontroller import process_chat, stream_chat
 from src.types.schemas import ChatRequest
 
 ROUTER = APIRouter()
@@ -17,5 +18,21 @@ async def generate_cot(request: ChatRequest):
     """
     try:
         return await process_chat(request.prompt, request.files, request.user_prefs)
+    except ValueError as err:
+        raise HTTPException(status_code=400, detail=str(err)) from err
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=str(error)) from error
+
+
+@ROUTER.post("/chat/stream")
+async def generate_cot_stream(request: ChatRequest):
+    """
+    Handle chat requests and stream progressive Chain-of-Thought reasoning steps via SSE.
+    """
+    try:
+        generator = stream_chat(request.prompt, request.files, request.user_prefs)
+        return StreamingResponse(generator, media_type="text/event-stream")
+    except ValueError as err:
+        raise HTTPException(status_code=400, detail=str(err)) from err
     except Exception as error:
         raise HTTPException(status_code=500, detail=str(error)) from error

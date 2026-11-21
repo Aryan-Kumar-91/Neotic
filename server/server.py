@@ -14,6 +14,7 @@ if hasattr(sys.stderr, "reconfigure"):
 
 from fastapi import FastAPI, WebSocket
 from src.middlewares.cors import setup_cors
+from src.middlewares.rate_limiter import setup_rate_limiter
 from src.routes.chatroutes import ROUTER as chat_router
 from src.routes.libraryroutes import ROUTER as library_router
 from src.rag.websocket import handle_rag_websocket
@@ -22,6 +23,7 @@ APP = FastAPI(title="Neotic Backend Core")
 
 # Initialize Middlewares
 setup_cors(APP)
+setup_rate_limiter(APP)
 
 # Mount Routes
 APP.include_router(chat_router, prefix="/api")
