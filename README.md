@@ -5,6 +5,7 @@
 [![Vite](https://img.shields.io/badge/Vite-8.3-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.109-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![Python](https://img.shields.io/badge/Python-3.12.x-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![Firebase](https://img.shields.io/badge/Firebase-12.x-DD2C00?logo=firebase&logoColor=white)](https://firebase.google.com/)
 [![Nginx](https://img.shields.io/badge/Nginx-1.27-009639?logo=nginx&logoColor=white)](https://nginx.org/)
 [![pnpm](https://img.shields.io/badge/pnpm-12.x-F69220?logo=pnpm&logoColor=white)](https://pnpm.io/)
 [![ESLint](https://img.shields.io/badge/ESLint-10.x-4B32C3?logo=eslint&logoColor=white)](https://eslint.org/)
@@ -154,18 +155,29 @@ python server.py
 
 ```text
 Neotic/
-├── src/                # React Vite Frontend
-│   ├── pages/          # Page Components (Routing)
-│   ├── components/     # UI/UX & React Flow Visualizers
-│   ├── hooks/          # Custom state hooks (useChatState, etc.)
-│   └── api/            # Isolated Chat & RAG clients
+├── src/                # React 19 + Vite Frontend SPA
+│   ├── api/            # Chat & RAG clients
+│   ├── components/     # UI/UX & React Flow DAG Visualizers
+│   ├── hooks/          # Custom state & collab hooks (useChatState, useCollabRoom)
+│   ├── lib/            # Firebase Auth & Supabase Realtime clients
+│   ├── pages/          # Dynamic routed pages (Home, Reasoning, Collab, Login, Privacy)
+│   ├── test/           # Vitest environment setup
+│   ├── types/          # TypeScript interface definitions
+│   └── utils/          # Shared constants & helper utilities
 ├── server/             # Python FastAPI Backend
 │   ├── src/            # Backend MVC Core
-│   │   ├── routes/     # Chat & AI Endpoints
-│   │   ├── middlewares/# Auth & CORS handlers
-│   │   └── rag/        # Vector DB & WebSocket Logic
-│   └── server.py       # Application Entry Point
-└── public/             # Static Assets & Architecture Documentation
+│   │   ├── config/     # Environment & API key management
+│   │   ├── controllers/# High-level request controllers
+│   │   ├── middlewares/# CORS & security handlers
+│   │   ├── rag/        # LangChain + ChromaDB vector service & WebSockets
+│   │   ├── routes/     # Chat, AI & library endpoints
+│   │   ├── services/   # Gemini Reasoning service & fallback negotiation
+│   │   ├── types/      # Pydantic request/response schemas
+│   │   └── validators/ # Chat input validation
+│   ├── tests/          # Pytest backend API test suite
+│   └── server.py       # FastAPI application entry point
+├── public/             # Static assets, architecture diagrams, and previews
+└── .github/workflows/  # Automated CI/CD pipelines (CI, Backend CI, CodeQL, Docker)
 ```
 
 ---
