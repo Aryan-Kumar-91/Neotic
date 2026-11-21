@@ -19,13 +19,17 @@ import warnings
 warnings.simplefilter("ignore", category=FutureWarning)
 
 # pylint: disable=import-error
-import google.generativeai as google_genai
+try:
+    import google.generativeai as google_genai
+except ImportError:
+    google_genai = None
 
 from src.config.env import GOOGLE_API_KEY
 from src.types.schemas import FileData
 from src.rag.service import get_rag_context
 
-google_genai.configure(api_key=GOOGLE_API_KEY)  # pyright: ignore
+if google_genai is not None:
+    google_genai.configure(api_key=GOOGLE_API_KEY)  # pyright: ignore
 
 # [DYNAMIC MODEL SELECTION]
 # Preferred model candidates for runtime fallback without startup network pings

@@ -1,6 +1,7 @@
 # Neotic: Advanced AI Reasoning & Visualization
 
 [![React](https://img.shields.io/badge/React-19.3-61DAFB?logo=react&logoColor=black)](https://react.dev/)
+[![React Router](https://img.shields.io/badge/React_Router-7.x-CA4245?logo=reactrouter&logoColor=white)](https://reactrouter.com/)
 [![Vite](https://img.shields.io/badge/Vite-8.3-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.109-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![Python](https://img.shields.io/badge/Python-3.12.x-3776AB?logo=python&logoColor=white)](https://www.python.org/)
