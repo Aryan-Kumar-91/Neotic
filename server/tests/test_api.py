@@ -2,6 +2,11 @@
 API Tests for the FastAPI backend.
 """
 
+import os
+
+# Set fallback dummy API key before module imports for test environment
+os.environ.setdefault("GOOGLE_API_KEY", "dummy-api-key-for-testing")
+
 # pylint: disable=import-error
 from fastapi.testclient import TestClient
 from server import APP
