@@ -3,7 +3,8 @@ import { ReactFlow, Background, MarkerType, Node, Edge, Handle, Position } from 
 import '@xyflow/react/dist/style.css';
 import {
   HelpCircle, CheckCircle, Filter, BrainCircuit, Eye, Calculator,
-  Image as ImageIcon, X, Sparkles, Lightbulb, ScanSearch, Layers, Waypoints, Library
+  Image as ImageIcon, X, Sparkles, Lightbulb, ScanSearch, Layers, Waypoints, Library,
+  Download, Copy, Check
 } from 'lucide-react';
 
 // â”€â”€â”€ Stage Naming & Color Palette â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -130,6 +131,34 @@ export default function ReasoningChain({ thoughts, isGenerating }: { thoughts: T
     if (!content) return;
     setSelected((prev) => prev && prev.index === index ? null : { index, label, content });
   }, []);
+
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyTrace = useCallback(() => {
+    if (!thoughts || thoughts.length === 0) return;
+    const text = thoughts
+      .map((t, i) => `[Phase ${i + 1} - ${t.step}]\n${t.content}`)
+      .join("\n\n");
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }, [thoughts]);
+
+  const handleExportJSON = useCallback(() => {
+    if (!thoughts || thoughts.length === 0) return;
+    const payload = {
+      exported_at: new Date().toISOString(),
+      step_count: thoughts.length,
+      thoughts,
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `neotic-trace-${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [thoughts]);
 
   const { nodes, edges } = useMemo(() => {
     const newNodes: Node[] = [];
@@ -264,6 +293,23 @@ export default function ReasoningChain({ thoughts, isGenerating }: { thoughts: T
           <span className="text-[#777] text-xs font-medium tracking-widest uppercase">Reasoning Trace</span>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={handleCopyTrace}
+            title="Copy reasoning trace"
+            className="flex items-center gap-1 text-[#666] hover:text-[#bbb] text-[10px] uppercase font-semibold tracking-wider transition-colors px-1.5 py-1 rounded hover:bg-white/5 cursor-pointer"
+          >
+            {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+            {copied ? 'Copied' : 'Copy'}
+          </button>
+          <button
+            onClick={handleExportJSON}
+            title="Export reasoning trace JSON"
+            className="flex items-center gap-1 text-[#666] hover:text-[#bbb] text-[10px] uppercase font-semibold tracking-wider transition-colors px-1.5 py-1 rounded hover:bg-white/5 cursor-pointer"
+          >
+            <Download className="w-3 h-3" />
+            JSON
+          </button>
+          <div className="w-px h-3 bg-[#222]" />
           <button
             onClick={() => setShowIcons(!showIcons)}
             className="flex items-center gap-1.5 text-[#555] hover:text-[#aaa] text-[10px] uppercase font-semibold tracking-wider transition-colors px-2 py-1 rounded hover:bg-white/5 cursor-pointer"
