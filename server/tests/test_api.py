@@ -112,3 +112,15 @@ def test_chat_too_many_files_validation():
     )
     assert response.status_code == 400  # nosec B101
     assert "Maximum 10 files" in response.json()["detail"]
+
+
+def test_chat_stream_endpoint():
+    """Test that the streaming endpoint returns SSE format with thought events."""
+    response = CLIENT.post(
+        "/api/chat/stream",
+        json={"prompt": "Test streaming reasoning"},
+        headers={"X-Forwarded-For": "10.0.0.5"},
+    )
+    assert response.status_code == 200  # nosec B101
+    assert "text/event-stream" in response.headers.get("content-type", "")
+    assert "event: thought" in response.text

@@ -23,7 +23,7 @@ import ReasoningChain from "../components/ReasoningChain";
 import StarBackground from "../components/StarBackground";
 import { Message, ChatSession } from "../@types/index";
 import { HOT_TOPICS, PLACEHOLDER_IDEAS } from "../utils/constants";
-import { sendPromptToAgent, Citation } from "../api/chatClient";
+import { streamPromptToAgent, Citation, Thought } from "../api/chatClient";
 import { useChatState } from "../hooks/useChatState";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { atomDark, materialLight } from "react-syntax-highlighter/dist/esm/styles/prism";
@@ -761,21 +761,46 @@ export default function NeoticMain() {
     const controller = new AbortController();
     abortControllerRef.current = controller;
 
-    const newMessages = [...messages, { role: "user", content: text }];
+    const userMsg: Message = { role: "user", content: text };
+    const placeholderMsg: Message = {
+      role: "assistant",
+      content: "",
+      thoughts: [],
+      citations: [],
+    };
+    const newMessages = [...messages, userMsg, placeholderMsg];
     setMessages(newMessages);
     setInput("");
     setIsGenerating(true);
 
     try {
       const userPrefs = { name: userName, interests: userInterests };
-      const data = await sendPromptToAgent(text, controller, undefined, userPrefs);
+      const data = await streamPromptToAgent(
+        text,
+        controller,
+        (thought: Thought) => {
+          setMessages(prev => {
+            if (prev.length === 0) return prev;
+            const updated = [...prev];
+            const last = { ...updated[updated.length - 1] };
+            if (last.role === "assistant") {
+              last.thoughts = [...(last.thoughts || []), thought];
+              updated[updated.length - 1] = last;
+            }
+            return updated;
+          });
+        },
+        undefined,
+        userPrefs
+      );
+
       const responseMessage: Message = { 
         role: "assistant", 
         content: data.final_answer, 
         thoughts: data.thoughts, 
         citations: data.citations 
       };
-      const updatedMessages = [...newMessages, responseMessage];
+      const updatedMessages = [...messages, userMsg, responseMessage];
       setMessages(updatedMessages);
 
       if (saveChatEnabled && userEmail) {
@@ -794,7 +819,7 @@ export default function NeoticMain() {
           setCurrentChatId(newId);
           const newChat = {
             id: newId,
-            title: newMessages[0].content.substring(0, 30) + "...",
+            title: text.substring(0, 30) + "...",
             messages: updatedMessages,
             folder: null,
             updatedAt: Date.now()
@@ -808,8 +833,11 @@ export default function NeoticMain() {
         speakText(data.final_answer);
       }
     } catch (err) {
-      if (err instanceof Error && err.name === "AbortError") return;
-      setMessages([...newMessages, { role: "assistant", content: "⚠️ Check the server, it is not active/running." }]);
+      if (err instanceof Error && err.name === "AbortError") {
+        setMessages(prev => prev.filter((_, idx) => idx !== prev.length - 1));
+        return;
+      }
+      setMessages([...messages, userMsg, { role: "assistant", content: "⚠️ Check the server, it is not active/running." }]);
     } finally {
       setIsGenerating(false);
     }
@@ -1089,19 +1117,33 @@ export default function NeoticMain() {
             <div className="space-y-8">
               {messages.map((msg, i) => (
                 <div key={i} className={`flex gap-5 ${msg.role === 'user' ? 'justify-end' : 'justify-start'} group`}>
-                  {msg.role === 'assistant' && <div className="flex flex-col gap-2 shrink-0">
-                    <div className={`w-9 h-9 rounded-xl ${theme.bgModule} border ${theme.borderMain} flex items-center justify-center shadow-sm`}><Bot className="w-5 h-5" /></div>
-                    <button onClick={() => speakText(msg.content)} className={`w-9 h-9 rounded-xl ${theme.bgModule} border ${theme.borderMain} flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-opacity hover:text-purple-500`} title="Read aloud">
-                      <Volume2 className="w-4 h-4" />
-                    </button>
-                  </div>}
+                  {msg.role === 'assistant' && (
+                    <div className="flex flex-col gap-2 shrink-0">
+                      <div className={`w-9 h-9 rounded-xl ${theme.bgModule} border ${theme.borderMain} flex items-center justify-center shadow-sm`}>
+                        <Bot className="w-5 h-5" />
+                      </div>
+                      {msg.content && (
+                        <button onClick={() => speakText(msg.content)} className={`w-9 h-9 rounded-xl ${theme.bgModule} border ${theme.borderMain} flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-opacity hover:text-purple-500`} title="Read aloud">
+                          <Volume2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  )}
                   <div className={`w-full overflow-hidden group ${msg.role === 'user' ? `max-w-[85%] ${isDarkMode ? 'bg-purple-900/60' : 'bg-slate-900'} dark:bg-purple-700 text-white py-3.5 px-5 rounded-2xl shadow-lg ${theme.accentShadow}` : 'pt-2'}`}>
-                    {msg.role === 'assistant' && msg.thoughts && msg.thoughts.length > 0 && <ReasoningChain thoughts={msg.thoughts} isGenerating={isGenerating && i === messages.length - 1} />}
-                    <MessageContent content={msg.content} isUser={msg.role === 'user'} theme={theme} isDarkMode={isDarkMode} citations={msg.citations} />
+                    {msg.role === 'assistant' && msg.thoughts && msg.thoughts.length > 0 && (
+                      <ReasoningChain thoughts={msg.thoughts} isGenerating={isGenerating && i === messages.length - 1} />
+                    )}
+                    {msg.content ? (
+                      <MessageContent content={msg.content} isUser={msg.role === 'user'} theme={theme} isDarkMode={isDarkMode} citations={msg.citations} />
+                    ) : isGenerating && i === messages.length - 1 ? (
+                      <div className={`text-sm font-medium ${theme.textMuted} flex items-center gap-2 py-2 animate-pulse`}>
+                        <div className="w-2 h-2 rounded-full bg-purple-400 animate-ping" />
+                        <span>Synthesizing verified response...</span>
+                      </div>
+                    ) : null}
                   </div>
                 </div>
               ))}
-              {isGenerating && <div className={`text-sm font-medium ${theme.textMuted} px-14 animate-pulse`}>Neotic is thinking...</div>}
             </div>
           )}
         </div>

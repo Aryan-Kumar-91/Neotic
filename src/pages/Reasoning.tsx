@@ -1,16 +1,18 @@
 "use client";
 
 import React, { useState } from 'react';
-import ReactFlow, {
+import {
+  ReactFlow,
   Background,
   Controls,
-  Node,
+  type Node,
+  type Edge,
   useNodesState,
   useEdgesState,
   useReactFlow,
   ReactFlowProvider
-} from 'reactflow';
-import 'reactflow/dist/style.css';
+} from '@xyflow/react';
+import '@xyflow/react/dist/style.css';
 
 
 
@@ -18,8 +20,8 @@ import 'reactflow/dist/style.css';
 function Flow() {
   const [messages, setMessages] = useState<{ role: string, content: string }[]>([]);
   const [inputText, setInputText] = useState('');
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [isThinking, setIsThinking] = useState(false);
   const { fitView } = useReactFlow();
 
@@ -58,12 +60,19 @@ function Flow() {
             style: { background: '#1E1E20', color: '#FFF', border: '2px solid #4285F4', width: 200, padding: 10, borderRadius: 8 }
           };
 
-          setNodes((nds) => nds.concat(newNode));
+          setNodes((nds) => [...nds, newNode]);
 
           if (i > 0) {
-            setEdges((eds) => eds.concat({
-              id: `e-${i}`, source: `step-${i - 1}`, target: `step-${i}`, animated: true, style: { stroke: '#9B72CB' }
-            }));
+            setEdges((eds) => [
+              ...eds,
+              {
+                id: `e-${i}`,
+                source: `step-${i - 1}`,
+                target: `step-${i}`,
+                animated: true,
+                style: { stroke: '#9B72CB' }
+              }
+            ]);
           }
 
           // FORCE THE CAMERA TO FIND THE NODES

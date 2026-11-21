@@ -146,12 +146,15 @@ def get_rag_context(query: str):
     """
     Search the vector store and return context with metadata (filename, etc).
     """
+    if GoogleGenerativeAIEmbeddings is None or Chroma is None:
+        return None
+    if not os.path.exists(PERSIST_DIR):
+        return None
+
     embeddings = GoogleGenerativeAIEmbeddings(
         model="models/text-embedding-004",
         google_api_key=GOOGLE_API_KEY,  # pyright: ignore[reportCallIssue]
     )
-    if not os.path.exists(PERSIST_DIR):
-        return None
 
     vectorstore = Chroma(persist_directory=PERSIST_DIR, embedding_function=embeddings)
     docs = vectorstore.similarity_search(query, k=3)
