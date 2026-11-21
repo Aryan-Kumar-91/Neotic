@@ -42,4 +42,11 @@ describe("ReasoningChain", () => {
       expect.stringContaining("[Phase 1 - Decomposition]")
     );
   });
+
+  it("renders JSON, PNG, and SVG export buttons", () => {
+    render(<ReasoningChain thoughts={sampleThoughts} />);
+    expect(screen.getByTitle("Export reasoning trace JSON")).toBeInTheDocument();
+    expect(screen.getByTitle("Download reasoning DAG as PNG image")).toBeInTheDocument();
+    expect(screen.getByTitle("Download reasoning DAG as vector SVG")).toBeInTheDocument();
+  });
 });

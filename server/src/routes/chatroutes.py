@@ -17,5 +17,7 @@ async def generate_cot(request: ChatRequest):
     """
     try:
         return await process_chat(request.prompt, request.files, request.user_prefs)
+    except ValueError as err:
+        raise HTTPException(status_code=400, detail=str(err)) from err
     except Exception as error:
         raise HTTPException(status_code=500, detail=str(error)) from error

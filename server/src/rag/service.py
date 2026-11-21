@@ -8,13 +8,27 @@ from typing import Any, Dict, Optional
 
 # pylint: disable=import-error
 from fastapi import WebSocket
-from langchain.agents import create_agent
-from langchain_community.document_loaders import PyPDFLoader, TextLoader
-from langchain_community.vectorstores import Chroma
-from langchain_core.callbacks import AsyncCallbackHandler
-from langchain_core.tools.retriever import create_retriever_tool
-from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
-from langchain_text_splitters import RecursiveCharacterTextSplitter
+try:
+    from langchain.agents import create_agent
+    from langchain_community.document_loaders import PyPDFLoader, TextLoader
+    from langchain_community.vectorstores import Chroma
+    from langchain_core.callbacks import AsyncCallbackHandler
+    from langchain_core.tools.retriever import create_retriever_tool
+    from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
+    from langchain_text_splitters import RecursiveCharacterTextSplitter
+except ImportError:
+    create_agent = None
+    PyPDFLoader = None
+    TextLoader = None
+    Chroma = None
+    create_retriever_tool = None
+    ChatGoogleGenerativeAI = None
+    GoogleGenerativeAIEmbeddings = None
+    RecursiveCharacterTextSplitter = None
+
+    class AsyncCallbackHandler:  # type: ignore
+        """Fallback callback handler when langchain is not installed."""
+        pass
 
 from src.config.env import GOOGLE_API_KEY
 

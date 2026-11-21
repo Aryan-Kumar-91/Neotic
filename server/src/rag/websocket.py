@@ -7,7 +7,10 @@ import uuid
 
 # pylint: disable=import-error
 from fastapi import WebSocket, WebSocketDisconnect
-from langchain_core.messages import HumanMessage
+try:
+    from langchain_core.messages import HumanMessage
+except ImportError:
+    HumanMessage = None
 from src.rag.service import CoTAsyncHandler, create_gemini_agent
 
 
