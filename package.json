@@ -20,7 +20,7 @@
         "@xyflow/react": "^12.12.1",
         "firebase": "^12.19.0",
         "html-to-image": "^1.11.13",
-        "lucide-react": "^1.77.0",
+        "lucide-react": "^1.79.0",
         "react": "19.3.0",
         "react-dom": "19.3.0",
         "react-router-dom": "^7.18.6",
